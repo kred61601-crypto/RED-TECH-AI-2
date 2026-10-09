@@ -1,5 +1,5 @@
 /**
- * AiInstance — one WhatsApp connection per SaaS user.
+ * botInstance — one WhatsApp connection per SaaS user.
  *
  * Extracts the connectionLogic from index.js and scopes all state
  * (sock, latestQr, myJid, settings, jsonStore) to the instance.
