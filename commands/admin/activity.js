@@ -12,25 +12,45 @@ module.exports = {
     groupOnly: true,
 
     async execute({ sock, jid, msg }) {
+        // React immediately before database work.
+        const react = async (emoji) => {
+            try {
+                if (msg?.key) {
+                    await sock.sendMessage(jid, {
+                        react: {
+                            text: emoji,
+                            key: msg.key
+                        }
+                    });
+                }
+            } catch (error) {
+                console.error("[Activity Reaction Error]", error.message);
+            }
+        };
+
+        await react("⏳");
+
         try {
             if (!jid || !jid.endsWith("@g.us")) {
-                return await sock.sendMessage(jid, {
+                await sock.sendMessage(jid, {
                     text: "❌ This command can only be used in a group."
                 }, { quoted: msg });
+
+                await react("❌");
+                return;
             }
 
-            let stats = [];
+            let records = [];
 
-            // Preferred method: query MongoDB.
+            // Get activity from MongoDB when connected.
             if (isOnline() && MessageLog) {
-                stats = await MessageLog.aggregate([
+                const stats = await MessageLog.aggregate([
                     {
                         $match: {
                             remoteJid: jid,
                             participant: {
                                 $exists: true,
-                                $ne: null,
-                                $not: { $eq: "" }
+                                $nin: [null, ""]
                             }
                         }
                     },
@@ -44,97 +64,128 @@ module.exports = {
                     { $sort: { msgCount: -1 } },
                     { $limit: 10 }
                 ]);
-            } else {
-                // Offline fallback: support common cache APIs if exposed.
-                let logs = [];
 
-                if (messageCache && typeof messageCache.getAllLogs === "function") {
-                    logs = await messageCache.getAllLogs();
-                } else if (messageCache && messageCache.logs instanceof Map) {
-                    logs = Array.from(messageCache.logs.values());
-                } else if (messageCache && messageCache.logs instanceof Array) {
-                    logs = messageCache.logs;
-                }
+                records = stats.map(item => ({
+                    participant: item._id,
+                    pushName: item.pushName || "",
+                    msgCount: item.msgCount
+                }));
+            } else {
+                // Fallback to the local message cache.
+                const logs = messageCache.getAllLogs();
 
                 const counts = new Map();
 
                 for (const log of logs) {
-                    if (log?.remoteJid !== jid || !log?.participant) continue;
+                    if (
+                        log?.remoteJid !== jid ||
+                        !log?.participant ||
+                        !String(log.participant).includes("@")
+                    ) {
+                        continue;
+                    }
 
-                    const existing = counts.get(log.participant) || {
-                        _id: log.participant,
-                        msgCount: 0,
-                        pushName: log.pushName || ""
-                    };
+                    const participant = log.participant;
 
-                    existing.msgCount += 1;
-                    counts.set(log.participant, existing);
+                    if (!counts.has(participant)) {
+                        counts.set(participant, {
+                            participant,
+                            pushName: log.pushName || "",
+                            msgCount: 0
+                        });
+                    }
+
+                    counts.get(participant).msgCount++;
                 }
 
-                stats = Array.from(counts.values())
+                records = [...counts.values()]
                     .sort((a, b) => b.msgCount - a.msgCount)
                     .slice(0, 10);
             }
 
-            if (!stats.length) {
-                return await sock.sendMessage(jid, {
+            if (!records.length) {
+                await sock.sendMessage(jid, {
                     text:
                         "📈 *KING RED AI — GROUP ACTIVITY*\n\n" +
-                        "No saved group messages were found yet.\n\n" +
-                        "Make sure message logging is running and MongoDB is connected. " +
-                        "This report can only count messages saved by the bot."
+                        "No saved messages were found for this group yet.\n\n" +
+                        "The bot can only count messages recorded after message logging starts."
                 }, { quoted: msg });
+
+                await react("⚠️");
+                return;
             }
 
             const mentions = [];
             const lines = [];
 
-            stats.forEach((stat, index) => {
-                const participant = stat._id;
+            records.forEach((item, index) => {
+                const participant = item.participant;
 
                 if (
                     typeof participant !== "string" ||
                     !participant.includes("@")
-                ) return;
+                ) {
+                    return;
+                }
 
                 mentions.push(participant);
 
-                const medal = ["🥇", "🥈", "🥉"][index] || `${index + 1}.`;
-                const name = stat.pushName
-                    ? `${stat.pushName} (@${participant.split("@")[0]})`
+                const rank =
+                    ["🥇", "🥈", "🥉"][index] || `${index + 1}.`;
+
+                const displayName = item.pushName
+                    ? `${item.pushName} (@${participant.split("@")[0]})`
                     : `@${participant.split("@")[0]}`;
 
                 lines.push(
-                    `${medal} ${name}\n` +
-                    `   💬 Messages: *${stat.msgCount}*`
+                    `${rank} ${displayName}\n` +
+                    `   💬 Messages: *${item.msgCount}*`
                 );
             });
 
             if (!lines.length) {
-                return await sock.sendMessage(jid, {
-                    text: "⚠️ Message records were found, but they don't contain valid participant IDs."
+                await sock.sendMessage(jid, {
+                    text: "⚠️ No valid group participant IDs were found in the saved messages."
                 }, { quoted: msg });
+
+                await react("⚠️");
+                return;
             }
 
+            const report =
+                `👑 *KING RED AI*\n` +
+                `📈 *MOST ACTIVE GROUP MEMBERS*\n\n` +
+                lines.join("\n\n") +
+                `\n\n━━━━━━━━━━━━━━━━━━\n` +
+                `🏆 *TOP ${lines.length} MEMBERS*`;
+
             await sock.sendMessage(jid, {
-                text:
-                    `👑 *KING RED AI*\n` +
-                    `📈 *MOST ACTIVE GROUP MEMBERS*\n\n` +
-                    lines.join("\n\n") +
-                    `\n\n━━━━━━━━━━━━━━━━━━\n` +
-                    `🏆 *TOP ${lines.length} MEMBERS*`,
+                text: report,
                 mentions: [...new Set(mentions)]
             }, { quoted: msg });
 
-        } catch (err) {
-            console.error("[Activity Command Error]", err);
+            // Report sent successfully.
+            await react("✅");
 
-            await sock.sendMessage(jid, {
-                text:
-                    "❌ Failed to generate the activity report.\n" +
-                    "Check the Render logs for the exact database error."
-            }, { quoted: msg });
+        } catch (error) {
+            console.error("[Activity Command Error]", error);
+
+            await react("❌");
+
+            try {
+                await sock.sendMessage(jid, {
+                    text:
+                        "❌ *KING RED AI — ACTIVITY ERROR*\n\n" +
+                        "I couldn't generate the activity report.\n" +
+                        "Please check the Render logs for the database error."
+                }, { quoted: msg });
+            } catch (sendError) {
+                console.error(
+                    "[Activity Error Reply]",
+                    sendError.message
+                );
+            }
         }
     }
 };
-                    
+    
