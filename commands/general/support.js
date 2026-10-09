@@ -23,7 +23,7 @@ module.exports = {
             owners.forEach((ownerJid, idx) => {
                 const number = ownerJid.split("@")[0];
                 const role = idx === 0 ? "Primary Owner (SUDO)" : "Administrator";
-                const link = idx === 0 ? "https://wa.me/254769564723" : `https://wa.me/${number}`;
+                const link = idx === 0 ? "https://wa.me/254100969922" : `https://wa.me/${number}`;
                 const userText = idx === 0 ? " (@fireboxstudios)" : "";
                 contactText += `👤 *${role}:${userText}*\n` +
                                `👉 ${link}\n\n`;
@@ -32,7 +32,7 @@ module.exports = {
             contactText += `⚠️ No administrators configured.\n\n`;
         }
 
-        contactText += `_Thank you for using Firebox Bot!_`;
+        contactText += `_Thank you for using 𝐑𝐄𝐃𝐓𝐄𝐂𝐇 Bot!_`;
 
         const { getSettings } = require("../../lib/settings");
         const settings = getSettings();
@@ -49,8 +49,8 @@ module.exports = {
         const { sendButtonMessage } = require("../../lib/utils");
         const footerText = "Firebox Bot Support";
         const buttons = [
-            { text: "💻 Bot Repo", url: "https://github.com/njogu26713-commits/firebox-bot" },
-            { text: "📢 WhatsApp Channel", url: "" }
+            { text: "💻 Bot Repo", url: "-bot" },
+            { text: "📢 WhatsApp Channel", url: "https://whatsapp.com/channel/0029Vb9AwScF6sn47ClubG1Z" }
         ];
 
         await sendButtonMessage(sock, jid, contactText, footerText, buttons, banner, msg);
