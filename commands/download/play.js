@@ -1,87 +1,157 @@
-import { sendInteractive } from '../../lib/sendInteractive.js';
-export default {
-  name: 'play',
-  aliases: ['ply', 'playy', 'pl'],
-  description: 'Downloads songs from YouTube and sends audio',
-  run: async (context) => {
-    const { client, m, text } = context;
-        await client.sendMessage(m.chat, { react: { text: '⌛', key: m.reactKey } });
+// commands/download/play.js
+// RED TECH AI - Audio Downloader
+
+const axios = require("axios");
+const yts = require("yt-search");
+
+module.exports = {
+  name: "play",
+  aliases: ["ply", "playy", "pl"],
+  description: "Search and download songs from YouTube",
+  category: "download",
+
+  execute: async (context) => {
+    const { sock, jid, msg, text } = context;
+
+    const reply = async (message) => {
+      return sock.sendMessage(
+        jid,
+        { text: message },
+        { quoted: msg }
+      );
+    };
+
+    const react = async (emoji) => {
+      try {
+        await sock.sendMessage(jid, {
+          react: { text: emoji, key: msg.key }
+        });
+      } catch {}
+    };
 
     try {
-      const query = text ? text.trim() : '';
+      const query = (text || "").trim();
 
       if (!query) {
-        await client.sendMessage(m.chat, { react: { text: '❌', key: m.reactKey } }).catch(() => {});
-        return sendInteractive(client, m, `⚡ ──「 PLAY 」──\n▢ You forgot to type something, genius.\n▢ Give me a song name OR a YouTube link.\n▢ Example: .play harlem shake\n▢ Or: .play https://youtu.be/dQw4w9WgXcQ\n└──✦ 𝐁𝐋𝐀𝐂𝐊 𝐏𝐀𝐍𝐓𝐇𝐄𝐑 ┃ ᴹᴰ ✦──`);
+        return reply(
+          "🎧 *RED TECH AI — AUDIO DOWNLOADER*\n\n" +
+          "Use: .play song name\n" +
+          "Example: .play Nawaza by Diamond Platnumz\n\n" +
+          "You can also send a YouTube link."
+        );
       }
 
-      await client.sendMessage(m.chat, { react: { text: '⌛', key: m.reactKey } });
+      await react("⏳");
 
-      const isYoutubeLink = /(?:https?:\/\/)?(?:youtu\.be\/|(?:www\.|m\.)?youtube\.com\/(?:watch\?v=|v\/|embed\/|shorts\/|playlist\?list=)?[a-zA-Z0-9_-]{11})/gi.test(query);
+      // Search for the song
+      const search = await yts(query);
+      const video = search.videos?.[0];
 
-      let audioUrl, filename, thumbnail, sourceUrl;
-
-      if (isYoutubeLink) {
-        const response = await fetch(`https://api.sidycoders.xyz/api/ytdl?url=${encodeURIComponent(query)}&format=mp3&apikey=memberdycoders`);
-        const data = await response.json();
-
-        if (!data.status || !data.cdn) {
-          await client.sendMessage(m.chat, { react: { text: '❌', key: m.reactKey } });
-          return sendInteractive(client, m, `▢ Can't download that YouTube link.\n▢ Your link is probably broken or private.\n▢ Even I have limits, unlike your stupidity.\n└──✦ 𝐑𝐄𝐃𝐓𝐄𝐂𝐇-𝐀𝐈 ┃ ᴹᴰ ✦──`);
-        }
-
-        audioUrl = data.cdn;
-        filename = data.title || "Unknown YouTube Song";
-        thumbnail = "";
-        sourceUrl = query;
-      } else {
-        if (query.length > 100) {
-          await client.sendMessage(m.chat, { react: { text: '❌', key: m.reactKey } }).catch(() => {});
-          return sendInteractive(client, m, "▢ Song title longer than my patience. 100 chars MAX!\n└──𝐑𝐄𝐃𝐓𝐄𝐂𝐇-𝐀𝐈 ┃ ᴹᴰ ✦──");
-        }
-
-        const response = await fetch(`https://apiziaul.vercel.app/api/downloader/ytplaymp3?query=${encodeURIComponent(query)}`);
-        const data = await response.json();
-
-        if (!data.status || !data.result?.downloadUrl) {
-          await client.sendMessage(m.chat, { react: { text: '❌', key: m.reactKey } });
-          return sendInteractive(client, m, `▢ No song found for "${query}".\n▢ Your music taste is as bad as your search skills.\n└──✦𝐑𝐄𝐃𝐓𝐄𝐂𝐇-𝐀𝐈 ┃ ᴹᴰ ✦──`);
-        }
-
-        audioUrl = data.result.downloadUrl;
-        filename = data.result.title || "Unknown Song";
-        thumbnail = data.result.thumbnail || "";
-        sourceUrl = data.result.videoUrl || "";
+      if (!video) {
+        await react("❌");
+        return reply("❌ No song found. Try another song title.");
       }
 
-      await client.sendMessage(m.chat, { react: { text: '✅', key: m.reactKey } });
+      const title = video.title || "Unknown Song";
+      const artist = video.author?.name || "Unknown Artist";
+      const duration = video.timestamp || "Unknown";
+      const views = Number(video.views || 0).toLocaleString();
+      const videoUrl = video.url;
+      const thumbnail = video.thumbnail;
 
-      await client.sendMessage(m.chat, {
-        audio: { url: audioUrl },
-        mimetype: "audio/mpeg",
-        fileName: `${filename}.mp3`,
-        contextInfo: thumbnail ? {
-          externalAdReply: {
-            title: filename.substring(0, 30),
-            body: "BLACK-PANTHER-MD",
-            thumbnailUrl: thumbnail,
-            sourceUrl: sourceUrl,
-            mediaType: 1,
-            renderLargerThumbnail: true } } : undefined });
+      // Send the information card while downloading
+      const caption =
+        "• *AUDIO DOWNLOADER* 🎧\n" +
+        "┏━━━⪼\n" +
+        `┃ 🎵 *Title* - ${title}\n` +
+        `┃ ⏱️ *Duration* - ${duration}\n` +
+        `┃ 👁️ *Views* - ${views}\n` +
+        `┃ 👤 *Author* - ${artist}\n` +
+        "┃ 📥 *Status* - Downloading...\n" +
+        "┗━━━⪼\n\n" +
+        "Powered by *RED TECH AI* 👑";
 
-      await client.sendMessage(m.chat, {
-        document: { url: audioUrl },
-        mimetype: "audio/mpeg",
-        fileName: `${filename.replace(/[<>:"/\\|?*]/g, '_')}.mp3`,
-        caption: `⚡ ──「 PLAY 」──
-▢ ${filename}\n└──✦ 𝐑𝐄𝐃𝐓𝐄𝐂𝐇-𝐀𝐈 ┃ ᴹᴰ ✦──`
+      try {
+        await sock.sendMessage(
+          jid,
+          {
+            image: { url: thumbnail },
+            caption
+          },
+          { quoted: msg }
+        );
+      } catch {
+        await reply(caption);
+      }
+
+      // Request the audio download from the API
+      const api =
+        "https://apiziaul.vercel.app/api/downloader/ytplaymp3?query=" +
+        encodeURIComponent(videoUrl);
+
+      const response = await axios.get(api, {
+        timeout: 60000,
+        headers: { Accept: "application/json" }
       });
 
+      const data = response.data;
+
+      const audioUrl =
+        data?.result?.downloadUrl ||
+        data?.result?.url ||
+        data?.downloadUrl ||
+        data?.url ||
+        data?.result?.download?.url;
+
+      if (!data?.status || !audioUrl) {
+        await react("❌");
+        return reply(
+          "❌ *RED TECH AI*\n\n" +
+          "The song was found, but the audio service did not provide a download link. Try again later."
+        );
+      }
+
+      // Download the audio
+      const audioResponse = await axios.get(audioUrl, {
+        responseType: "arraybuffer",
+        timeout: 120000,
+        maxContentLength: 25 * 1024 * 1024,
+        maxBodyLength: 25 * 1024 * 1024
+      });
+
+      const audio = Buffer.from(audioResponse.data);
+
+      if (!audio.length) {
+        throw new Error("Audio download returned an empty file.");
+      }
+
+      const safeTitle = title
+        .replace(/[<>:"/\\|?*\x00-\x1F]/g, "_")
+        .slice(0, 100);
+
+      await sock.sendMessage(
+        jid,
+        {
+          audio,
+          mimetype: "audio/mpeg",
+          fileName: `${safeTitle}.mp3`
+        },
+        { quoted: msg }
+      );
+
+      await react("✅");
+
     } catch (error) {
-      console.error('Play error:', error);
-      await client.sendMessage(m.chat, { react: { text: '❌', key: m.reactKey } });
-      await sendInteractive(client, m, `⚡ ──「 PLAY ERROR 」──
-▢ Play failed. The universe rejects your music taste.\n└──✦ 𝐑𝐄𝐃𝐓𝐄𝐂𝐇-𝐀𝐈 ┃ ᴹᴰ ✦──`);
+      console.error(
+        "[RED TECH AI PLAY ERROR]",
+        error.response?.data || error.message || error
+      );
+
+      await react("❌");
+      await reply(
+        "❌ *RED TECH AI*\n\n" +
+        "Sorry, the song could not be downloaded. The download service may be unavailable. Please try again."
+      ).catch(() => {});
     }
   }
 };
