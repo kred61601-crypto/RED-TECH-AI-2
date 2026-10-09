@@ -1,4 +1,4 @@
-const { getUser } = require("../../firebox/userModel");
+const { getUser } = require("../../redtech/userModel");
 
 module.exports = {
     name: "balance",
