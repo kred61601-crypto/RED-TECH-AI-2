@@ -1,36 +1,56 @@
-<svg width="800" height="300" xmlns="http://www.w3.org/2000/svg">
-  <defs>
-    <linearGradient id="redGrad" x1="0%" y1="0%" x2="100%" y2="0%">
-      <stop offset="0%" stop-color="#ff0000"><animate attributeName="stop-color" values="#ff0000;#ff6a00;#ff0000" dur="2s" repeatCount="indefinite"/></stop>
-      <stop offset="100%" stop-color="#ff6a00"><animate attributeName="stop-color" values="#ff6a00;#ff0000;#ff6a00" dur="2s" repeatCount="indefinite"/></stop>
-    </linearGradient>
-    <filter id="glow"><feGaussianBlur stdDeviation="6" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
-  </defs>
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="300" viewBox="0 0 800 300">
+<defs>
+  <!-- Colourful mixed background -->
+  <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+    <stop offset="0%" stop-color="#1a0033"/>
+    <stop offset="25%" stop-color="#ff006a"/>
+    <stop offset="50%" stop-color="#ff3c00"/>
+    <stop offset="75%" stop-color="#9900ff"/>
+    <stop offset="100%" stop-color="#000000"/>
+  </linearGradient>
+  <linearGradient id="textGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+    <stop offset="0%" stop-color="#ff1a1a"/>
+    <stop offset="100%" stop-color="#ffae00"/>
+  </linearGradient>
+  
+  <!-- Animation -->
+  <style>
+    .float1 { animation: floatUp 6s ease-in-out infinite; }
+    .float2 { animation: floatUp 8s ease-in-out infinite 1s; }
+    .float3 { animation: floatUp 7s ease-in-out infinite 0.5s; }
+    .bubble { animation: bubbleUp 5s linear infinite; }
+    @keyframes floatUp {
+      0% { transform: translateY(300px) scale(0.5); opacity: 0; }
+      50% { opacity: 1; }
+      100% { transform: translateY(-50px) scale(1.2); opacity: 0; }
+    }
+    @keyframes bubbleUp {
+      0% { transform: translateY(300px) translateX(0); opacity: 0.6; }
+      100% { transform: translateY(-20px) translateX(20px); opacity: 0; }
+    }
+  </style>
+</defs>
 
-  <!-- BLACK BACKGROUND -->
-  <rect width="800" height="300" rx="30" fill="black"/>
+<!-- Background -->
+<rect width="800" height="300" rx="25" fill="url(#bg)"/>
 
-  <!-- FLOWING LOVE HEARTS - ANIMATED -->
-  <g opacity="0.6">
-    <text x="100" y="150" font-size="30">❤️<animateTransform attributeName="transform" type="translate" values="0 0; 0 -200; 0 0" dur="4s" repeatCount="indefinite"/></text>
-    <text x="200" y="200" font-size="25">💖<animateTransform attributeName="transform" type="translate" values="0 0; 0 -150; 0 0" dur="3s" repeatCount="indefinite"/></text>
-    <text x="600" y="180" font-size="30">💕<animateTransform attributeName="transform" type="translate" values="0 0; 0 -180; 0 0" dur="3.5s" repeatCount="indefinite"/></text>
-    <text x="700" y="220" font-size="20">❤️<animateTransform attributeName="transform" type="translate" values="0 0; 0 -100; 0 0" dur="5s" repeatCount="indefinite"/></text>
-    <text x="50" y="220" font-size="20">💗<animateTransform attributeName="transform" type="translate" values="0 0; 0 -120; 0 0" dur="4.5s" repeatCount="indefinite"/></text>
-    <text x="500" y="250" font-size="28">💖<animateTransform attributeName="transform" type="translate" values="0 0; 0 -200; 0 0" dur="4s" repeatCount="indefinite"/></text>
-  </g>
+<!-- Flowing Love Hearts -->
+<text x="50" y="280" font-size="24" class="float1">❤️</text>
+<text x="150" y="280" font-size="20" class="float2">💖</text>
+<text x="300" y="280" font-size="28" class="float3">💕</text>
+<text x="450" y="280" font-size="18" class="float1">❤️</text>
+<text x="600" y="280" font-size="26" class="float2">💗</text>
+<text x="700" y="280" font-size="22" class="float3">💖</text>
 
-  <!-- REDTECH AI - ANIMATED PULSING -->
-  <g filter="url(#glow)">
-    <text x="400" y="150" text-anchor="middle" font-family="Arial Black" font-size="62" font-weight="900" fill="url(#redGrad)" letter-spacing="2">
-      🔥 ✦ 𝐑𝐄𝐃𝐓𝐄𝐂𝐇-𝐀𝐈 ┃ 
-      <animateTransform attributeName="transform" type="scale" values="1;1.05;1" additive="sum" dur="1.5s" repeatCount="indefinite" />
-    </text>
-  </g>
+<!-- Flowing Bubbles -->
+<circle cx="100" cy="280" r="8" fill="none" stroke="white" stroke-opacity="0.3" class="bubble"/>
+<circle cx="250" cy="280" r="12" fill="none" stroke="white" stroke-opacity="0.2" class="bubble" style="animation-delay:1s"/>
+<circle cx="500" cy="280" r="6" fill="none" stroke="white" stroke-opacity="0.4" class="bubble" style="animation-delay:0.5s"/>
+<circle cx="650" cy="280" r="10" fill="none" stroke="white" stroke-opacity="0.3" class="bubble" style="animation-delay:2s"/>
 
-  <!-- SUBTITLE - FADE ANIMATION -->
-  <text x="400" y="190" text-anchor="middle" font-family="Arial" font-size="16" letter-spacing="6" fill="white" opacity="0.9">
-    THE ULTIMATE WHATSAPP POWER-BOT
-    <animate attributeName="opacity" values="0.7;1;0.7" dur="2s" repeatCount="indefinite"/>
-  </text>
+<!-- CENTER TEXT - Well centered -->
+<g text-anchor="middle">
+  <text x="400" y="155" font-family="Arial Black" font-size="52" font-weight="900" fill="url(#textGrad)" stroke="#ff3300" stroke-width="0.5">🔥 𝐑𝐄𝐃𝐓𝐄𝐂𝐇𝐀𝐈</text>
+  <text x="400" y="190" font-family="Arial" font-size="14" font-weight="700" fill="white" letter-spacing="3" opacity="0.95">THE ULTIMATE WHATSAPP POWER-BOT</text>
+</g>
 </svg>
