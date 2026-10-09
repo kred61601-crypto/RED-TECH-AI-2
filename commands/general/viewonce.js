@@ -3,60 +3,174 @@ const { downloadMediaMessage } = require("@whiskeysockets/baileys");
 module.exports = {
     name: "viewonceopen",
     aliases: ["viewonce", "vv"],
-    description: "Reveal a view-once image or video (Reply to the message)",
+    description: "Reveal a view-once image or video by replying to it.",
     category: "general",
+
     execute: async (ctx) => {
-        const { sock, jid, msg: message } = ctx;
+        const { sock, jid, msg } = ctx;
+        const message = msg;
+
+        // React immediately before processing the command.
+        const react = async (emoji) => {
+            try {
+                if (message?.key) {
+                    await sock.sendMessage(jid, {
+                        react: {
+                            text: emoji,
+                            key: message.key
+                        }
+                    });
+                }
+            } catch (error) {
+                console.error("[ViewOnce Reaction Error]", error.message);
+            }
+        };
+
+        await react("📷");
 
         try {
-            console.log("🔍 ViewOnce Debug: Processing command...");
-            // Extract quoted imageMessage or videoMessage
-            const quoted = message.message?.extendedTextMessage?.contextInfo?.quotedMessage;
+            if (!message?.message) {
+                await sock.sendMessage(
+                    jid,
+                    { text: "❌ I couldn't read your command message." },
+                    { quoted: message }
+                );
+                await react("❌");
+                return;
+            }
+
+            // Get the message being replied to.
+            const contextInfo =
+                message.message.extendedTextMessage?.contextInfo ||
+                message.message.imageMessage?.contextInfo ||
+                message.message.videoMessage?.contextInfo;
+
+            const quoted = contextInfo?.quotedMessage;
+
             if (!quoted) {
-                return await sock.sendMessage(jid, { text: "❌ Please reply to a view-once message." }, { quoted: message });
+                await sock.sendMessage(
+                    jid,
+                    {
+                        text: "❌ Please reply directly to a view-once image or video with .vv"
+                    },
+                    { quoted: message }
+                );
+                await react("⚠️");
+                return;
             }
 
-            // WhatsApp may wrap the quoted media in several nested containers.
-            // Unwrap them for type/caption detection; Baileys handles the same
-            // structure when downloading the complete quoted message below.
-            let mediaContent = quoted;
-            for (let i = 0; i < 5; i++) {
-                const wrapper = mediaContent?.ephemeralMessage ||
-                                mediaContent?.viewOnceMessage ||
-                                mediaContent?.viewOnceMessageV2 ||
-                                mediaContent?.viewOnceMessageV2Extension ||
-                                mediaContent?.documentWithCaptionMessage;
-                if (!wrapper?.message) break;
-                mediaContent = wrapper.message;
+            // Unwrap common WhatsApp message wrappers.
+            function unwrapMessage(content) {
+                let current = content;
+
+                for (let i = 0; i < 8; i++) {
+                    const wrapper =
+                        current?.ephemeralMessage ||
+                        current?.viewOnceMessage ||
+                        current?.viewOnceMessageV2 ||
+                        current?.viewOnceMessageV2Extension ||
+                        current?.documentWithCaptionMessage;
+
+                    if (!wrapper?.message) break;
+                    current = wrapper.message;
+                }
+
+                return current;
             }
 
-            const imageMsg = mediaContent.imageMessage;
-            const videoMsg = mediaContent.videoMessage;
+            const mediaContent = unwrapMessage(quoted);
+            const imageMsg = mediaContent?.imageMessage;
+            const videoMsg = mediaContent?.videoMessage;
+
+            if (!imageMsg && !videoMsg) {
+                await sock.sendMessage(
+                    jid,
+                    {
+                        text: "❌ The replied message is not a supported view-once image or video."
+                    },
+                    { quoted: message }
+                );
+                await react("⚠️");
+                return;
+            }
+
+            // Reconstruct the quoted message for Baileys.
+            const quotedKey = {
+                remoteJid: jid,
+                id: contextInfo.stanzaId,
+                participant: contextInfo.participant
+            };
+
+            if (!quotedKey.id) {
+                await sock.sendMessage(
+                    jid,
+                    {
+                        text: "❌ I couldn't identify the original message. Try replying to it again."
+                    },
+                    { quoted: message }
+                );
+                await react("⚠️");
+                return;
+            }
+
+            const downloadMessage = {
+                key: quotedKey,
+                message: quoted
+            };
+
+            const buffer = await downloadMediaMessage(
+                downloadMessage,
+                "buffer",
+                {},
+                { logger: sock.logger || console }
+            );
+
+            if (!buffer || !buffer.length) {
+                throw new Error("The downloaded media was empty.");
+            }
 
             if (imageMsg) {
-                console.log("📸 Found Image Message");
-                const buffer = await downloadMediaMessage(
-                    { message: quoted },
-                    "buffer",
-                    {},
-                    { logger: console }
+                await sock.sendMessage(
+                    jid,
+                    {
+                        image: buffer,
+                        caption: imageMsg.caption || "👑 KING RED AI"
+                    },
+                    { quoted: message }
                 );
-                await sock.sendMessage(jid, { image: buffer, caption: imageMsg.caption || '' }, { quoted: message });
-            } else if (videoMsg) {
-                console.log("🎥 Found Video Message");
-                const buffer = await downloadMediaMessage(
-                    { message: quoted },
-                    "buffer",
-                    {},
-                    { logger: console }
-                );
-                await sock.sendMessage(jid, { video: buffer, caption: videoMsg.caption || '' }, { quoted: message });
             } else {
-                await sock.sendMessage(jid, { text: '❌ Please reply to a view-once image or video.' }, { quoted: message });
+                await sock.sendMessage(
+                    jid,
+                    {
+                        video: buffer,
+                        caption: videoMsg.caption || "👑 KING RED AI"
+                    },
+                    { quoted: message }
+                );
             }
-        } catch (err) {
-            console.error("❌ ViewOnce Error:", err);
-            await sock.sendMessage(jid, { text: `⚠️ Error: ${err.message}` }, { quoted: message });
+
+            await react("✅");
+
+        } catch (error) {
+            console.error("[ViewOnce Command Error]", error);
+
+            await react("❌");
+
+            try {
+                await sock.sendMessage(
+                    jid,
+                    {
+                        text:
+                            "❌ *KING RED AI — VIEW ONCE ERROR*\n\n" +
+                            "I couldn't retrieve that media. It may have expired, " +
+                            "or WhatsApp may not have supplied the required message keys.\n\n" +
+                            `Error: ${error.message || "Unknown error"}`
+                    },
+                    { quoted: message }
+                );
+            } catch (sendError) {
+                console.error("[ViewOnce Reply Error]", sendError.message);
+            }
         }
     }
 };
