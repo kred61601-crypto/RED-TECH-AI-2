@@ -1,6 +1,6 @@
 const mongoose = require("mongoose");
-const { isOnline, toCompat } = require("../firebox/db");
-const jsonStore = require("../firebox/jsonStore");
+const { isOnline, toCompat } = require("../redtech/db");
+const jsonStore = require("../redtech/jsonStore");
 
 const SETTINGS_KEY = "bot_settings";
 
