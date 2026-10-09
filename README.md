@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="assets/firebox-logo.svg" alt="Firebox Bot Banner" width="100%">
+  <img src="assets/firebox-logo.svg" alt="Redtech Ai Banner" width="100%">
 </p>
 
 <p align="center">
@@ -14,16 +14,16 @@
 
 ### <img src="https://img.icons8.com/color/28/whatsapp.png" width="18"/> Official WhatsApp Group
 Stay updated, ask questions, and chat with other users by joining our official group:
-**[Join Firebox Bot Support Group](https://chat.whatsapp.com/E8BOikeeP9a0ds2odgneHy)**
+**[Join Redtech Bot Support Group](https://chat.whatsapp.com/E8BOikeeP9a0ds2odgneHy)**
 
 ### <img src="https://img.icons8.com/color/28/star.png" width="18"/> Support the Project
-If you like Firebox Bot, please take a moment to support the repository:
+If you like Redtech Bot, please take a moment to support the repository:
 - **Star the Repo**: Click the star button at the top right of this page to show your love!
 - **Fork the Repo**: Click the fork button to clone it into your own account and customize it.
 
 ---
 
-## <img src="https://img.icons8.com/color/28/rocket.png" width="22"/> Deploy Firebox Bot
+## <img src="https://img.icons8.com/color/28/rocket.png" width="22"/> Deploy 𝐑𝐄𝐃𝐓𝐄𝐂𝐇 Bot
 
 <p align="center">
   <a href="https://railway.app/new/template?template=https://github.com/njogu26713-commits/firebox-bot">
@@ -35,16 +35,16 @@ If you like Firebox Bot, please take a moment to support the repository:
   </a>
   &nbsp;&nbsp;
   <a href="https://render.com/deploy?repo=https://github.com/njogu26713-commits/firebox-bot">
-    <img src="https://render.com/images/deploy-to-render-button.svg" alt="Deploy on Render" height="40">
+    <img src="https://render.com/images/deploy-to-render-button.svg" alt="Deploy on Render" height="50">
   </a>
 </p>
 
 ---
 
-## <img src="https://img.icons8.com/color/28/scales.png" width="22"/> Legal & Disclaimer
+## <img src="https://img.icons8.com/color/28/scales.png" width="30"/> Legal & Disclaimer
 
-The developers of Firebox Bot are not responsible for any damage, account bans, data loss, or legal actions resulting from the use of this software. By deploying or using this code, you agree to take full responsibility for your actions and abide by local regulations and terms of service.
+The developers of Redtech Bot are not responsible for any damage, account bans, data loss, or legal actions resulting from the use of this software. By deploying or using this code, you agree to take full responsibility for your actions and abide by local regulations and terms of service.
 
 This bot is NOT officially authorized, endorsed, or affiliated with WhatsApp Inc. or Meta Platforms, Inc. Use responsibly and at your own risk.
 
-Copyright &copy; 2026 Firebox Studios. All rights reserved.
+Copyright &copy; 2026 Redtech Studios. All rights reserved.
