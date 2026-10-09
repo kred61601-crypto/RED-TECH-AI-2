@@ -1,10 +1,10 @@
 const crypto = require("crypto");
 
-const hubUrl = String(process.env.FIREBOX_HUB_URL || "").replace(/\/$/, "");
-const botId = process.env.FIREBOX_BOT_ID;
-const botKey = process.env.FIREBOX_BOT_KEY;
-const workspaceUrl = process.env.FIREBOX_PUBLIC_URL || process.env.PUBLIC_URL || "";
-const botName = process.env.FIREBOX_BOT_NAME || botId || "Firebox Bot";
+const hubUrl = String(process.env.REDTECH_HUB_URL || "").replace(/\/$/, "");
+const botId = process.env.REDTECH_AI_ID;
+const botKey = process.env.REDTECH_AI_KEY;
+const workspaceUrl = process.env.REDTECH_PUBLIC_URL || process.env.PUBLIC_URL || "";
+const botName = process.env.REDTECH_AI_NAME || botId || "Redtech Ai";
 
 const enabled = Boolean(hubUrl && botId && botKey);
 let warned = false;
@@ -18,8 +18,8 @@ async function request(path, options = {}) {
             signal: controller.signal,
             headers: {
                 "Content-Type": "application/json",
-                "X-Firebox-Bot-Id": botId,
-                "X-Firebox-Bot-Key": botKey,
+                "X-Redtech-Ai-Id": botId,
+                "X-Retech-Ai-Key": botKey,
                 ...(options.headers || {}),
             },
         });
@@ -33,9 +33,9 @@ async function request(path, options = {}) {
 
 async function register() {
     if (!enabled) {
-        if (!warned && (process.env.FIREBOX_HUB_URL || process.env.FIREBOX_BOT_ID || process.env.FIREBOX_BOT_KEY)) {
+        if (!warned && (process.env.REDTECH_HUB_URL || process.env.REDTECH_AI_ID || process.env.REDTECH_AI_KEY)) {
             warned = true;
-            console.warn("[FireboxHub] Incomplete hub configuration; expected FIREBOX_HUB_URL, FIREBOX_BOT_ID, and FIREBOX_BOT_KEY.");
+            console.warn("[FireboxHub] Incomplete hub configuration; expected REDTECH_HUB_URL, REDTECH_AI_ID, and REDTECH_AI_KEY.");
         }
         return null;
     }
@@ -50,7 +50,7 @@ async function sendEvent(type, data = {}) {
     const eventId = crypto.randomUUID();
     return request(`/api/ingest/${encodeURIComponent(botId)}`, {
         method: "POST",
-        headers: { "X-Firebox-Event-Id": eventId },
+        headers: { "X-Redtech-Event-Id": eventId },
         body: JSON.stringify({ type, data }),
     });
 }
@@ -59,7 +59,7 @@ function start() {
     if (!enabled) return;
     register()
         .then(() => sendEvent("bot.status", { status: "service_online" }))
-        .catch(error => console.warn(`[FireboxHub] Registration failed: ${error.message}`));
+        .catch(error => console.warn(`[RedtechHub] Registration failed: ${error.message}`));
 }
 
 module.exports = { enabled, register, sendEvent, start };
