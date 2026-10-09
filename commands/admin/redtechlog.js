@@ -1,14 +1,14 @@
-const { MessageLog } = require("../../firebox/messageModel");
+const { MessageLog } = require("../../redtech/messageModel");
 
 module.exports = {
     name: "log",
-    aliases: ["fireboxlog", "history"],
+    aliases: ["redtechlog", "history"],
     description: "Display recent bot activity from the database.",
     category: "admin",
     adminOnly: true,
     execute: async ({ sock, jid, msg }) => {
         try {
-            await sock.sendMessage(jid, { text: "📜 *Retrieving recent firebox logs...*" });
+            await sock.sendMessage(jid, { text: "📜 *Retrieving recent redtech logs...*" });
 
             // Fetch last 20 actions globally
             const logs = await MessageLog.findAll({
