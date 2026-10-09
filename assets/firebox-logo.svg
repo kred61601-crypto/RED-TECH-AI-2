@@ -23,6 +23,20 @@
       50% { transform: translateX(8px); }
       100% { transform: translateX(0px); }
     }
+     <!-- Smaller background, mixed colors -->
+  <rect width="800" height="300" rx="30" fill="url(#bg)"/>
+  
+  <!-- Floating love hearts -->
+  <g opacity="0.8" font-size="24">
+    <text x="50" y="60">💖</text>
+    <text x="150" y="80">❤️</text>
+    <text x="300" y="50">💕</text>
+    <text x="500" y="70">💜</text>
+    <text x="700" y="60">💖</text>
+    <text x="100" y="250">💜</text>
+    <text x="250" y="270">💖</text>
+    <text x="650" y="250">❤️</text>
+  </g>
     .animated-text {
       font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
       font-weight: 900;
