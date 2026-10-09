@@ -1,215 +1,133 @@
+
 const { getSettings, updateSettings } = require("../../lib/settings");
 const jsonStore = require("../../redtech/jsonStore");
 
-const on  = "✅ ON";
-const off = "❌ OFF";
+const ON = "✅ ON";
+const OFF = "❌ OFF";
 
-// ─── Detail panels shown when user replies with a number ──────────────────────
+const bool = (value) => value ? ON : OFF;
+const modeLabel = (value) =>
+    value === "off" ? "❌ OFF" : `✅ ${String(value || "off").toUpperCase()}`;
+
 const getPanels = (s) => ({
     1: {
         title: "🤖 BOT CONFIGURATION",
         desc: "Customize your bot identity and behavior.",
-        status: `🔹 *Name:* ${s.botName || "Redtech Bot"}\n` +
-                `🔹 *Mode:* ${s.publicMode ? "public" : "private"}\n` +
-                `   _public = everyone can use, private = owner only_\n` +
-                `🔹 *Device:* ${s.device || "Android"}\n` +
-                `   _iPhone = plain text messages, Android = full features_\n` +
-                `🔹 *Prefix:* ${s.prefix || "."}\n` +
-                `🔹 *Pack:* ${s.packName || "Redtech Bot"}\n` +
-                `🔹 *Author:* ${s.author || "White Wizard"}\n` +
-                `🔹 *Timezone:* ${s.timezone || "Africa/Nairobi"}\n` +
-                `🔹 *Bot Image:* ${s.botImage || "Default"}\n` +
-                `🔹 *Menu Style:* Style ${s.menuStyle || "1"} — ${s.menuStyle == 2 ? "Buttons" : "Lines"}`,
-        usage: `▸ Reply "mode" or "toggle" — Toggle public/private mode\n` +
-               `▸ \`.mode public/private\` — Bot access mode\n` +
-               `▸ \`.botname <name>\` — Change bot name\n` +
-               `▸ \`.devicemode iphone/android\` — Message style\n` +
-               `▸ \`.prefix <symbol>\` — Change prefix (e.g. ! or #)\n` +
-               `▸ \`.packname <name>\` — Sticker pack name\n` +
-               `▸ \`.author <name>\` — Sticker author name\n` +
-               `▸ \`.timezone <zone>\` — e.g. Africa/Nairobi\n` +
-               `▸ \`.botpic\` — Reply to image or video to set bot image\n` +
-               `▸ \`.hideviewchannel on/off\` — Hide view channel & forwarded labels\n` +
-               `▸ \`.menustyle 1/2\` — Switch menu style`
+        status: [
+            `🔹 Name: ${s.botName || "Redtech Bot"}`,
+            `🔹 Mode: ${s.publicMode ? "public" : "private"}`,
+            `🔹 Device: ${s.device || "Android"}`,
+            `🔹 Prefix: ${s.prefix || "."}`,
+            `🔹 Pack: ${s.packName || "Redtech Bot"}`,
+            `🔹 Author: ${s.author || "White Wizard"}`,
+            `🔹 Timezone: ${s.timezone || "Africa/Nairobi"}`,
+            `🔹 Menu Style: ${s.menuStyle || 1}`
+        ].join("\n"),
+        usage: "Reply with mode/toggle to switch public/private.\nUse your existing .botname, .prefix, .devicemode, .packname and .author commands to edit values."
     },
     2: {
         title: "🔗 ANTI-LINK",
-        desc: "Automatically detects and handles links posted in groups. You can set it for one specific group or all groups at once.",
-        status: `🔹 *All Groups (global):* ${s.antiLinkGlobal === "off" ? "❌ OFF" : `✅ ${s.antiLinkGlobal.toUpperCase()}`}\n` +
-                `🔹 *Warn Limit:* ${s.antiLinkLimit || 3}`,
-        usage: `▸ Reply "2" or "toggle" — Cycle global anti-link mode\n` +
-               `▸ Reply "warn", "delete", "remove", or "off" — Set global anti-link\n` +
-               `▸ \`.antilink warn\` — Enable for this group (warn mode)\n` +
-               `▸ \`.antilink delete\` — Enable for this group (delete mode)\n` +
-               `▸ \`.antilink remove\` — Enable for this group (kick mode)\n` +
-               `▸ \`.antilink off\` — Disable in this group\n` +
-               `▸ \`.antilink warn all\` — Enable in ALL groups\n` +
-               `▸ \`.antilink delete all\` — Delete in ALL groups\n` +
-               `▸ \`.antilink remove all\` — Kick in ALL groups\n` +
-               `▸ \`.antilink off all\` — Disable in ALL groups\n` +
-               `▸ \`.antilink limit <1-10>\` — Set how many warns before kick\n` +
-               `▸ \`.antilink resetwarns\` — Clear all warning counts`
+        desc: "Global anti-link protection.",
+        status: `🔹 Global: ${modeLabel(s.antiLinkGlobal)}\n🔹 Warn limit: ${s.antiLinkLimit || 3}`,
+        usage: "Reply off, warn, delete or remove to set global mode."
     },
     3: {
-        title: "🏷️ ANTI-STATUS-MENTION (ANTITAG)",
-        desc: "Blocks users who send status mention/tag messages in groups. Set per-group or for all groups.",
-        status: `🔹 *All Groups (global):* ${s.antiStatusMentionGlobal === "off" ? "❌ OFF" : `✅ ${s.antiStatusMentionGlobal.toUpperCase()}`}\n` +
-                `🔹 *Warn Limit:* ${s.antiStatusMentionLimit || 3}`,
-        usage: `▸ Reply "3" or "toggle" — Cycle global antitag mode\n` +
-               `▸ Reply "warn", "delete", "remove", or "off" — Set global antitag\n` +
-               `▸ \`.antistatusmention warn\` — Enable for this group (warn mode)\n` +
-               `▸ \`.antistatusmention delete\` — Enable for this group (delete mode)\n` +
-               `▸ \`.antistatusmention remove\` — Enable for this group (kick mode)\n` +
-               `▸ \`.antistatusmention off\` — Disable in this group\n` +
-               `▸ \`.antistatusmention warn all\` — Enable in ALL groups\n` +
-               `▸ \`.antistatusmention delete all\` — Delete in ALL groups\n` +
-               `▸ \`.antistatusmention remove all\` — Kick in ALL groups\n` +
-               `▸ \`.antistatusmention off all\` — Disable in ALL groups\n` +
-               `▸ \`.antistatusmention limit <1-10>\` — Set how many warns before kick\n` +
-               `▸ \`.antistatusmention resetwarns\` — Clear all warning counts`
+        title: "🏷️ ANTI-STATUS-MENTION",
+        desc: "Global anti-status-mention configuration.",
+        status: `🔹 Global: ${modeLabel(s.antiStatusMentionGlobal)}\n🔹 Warn limit: ${s.antiStatusMentionLimit || 3}`,
+        usage: "Reply off, warn, delete or remove to set global mode."
     },
     4: {
         title: "🗑️ ANTI-DELETE",
-        desc: "Recovers deleted messages and sends them to your personal DM.",
-        status: `💠 *Status:* ${s.antiDelete ? on : off}`,
-        usage: `▸ Reply "4" or "toggle" — Toggle ON/OFF\n` +
-               `▸ Reply "on" or "off" — Set status\n` +
-               `▸ \`.antidelete on\` — Enable\n` +
-               `▸ \`.antidelete off\` — Disable`
+        desc: "Recover deleted messages.",
+        status: `💠 Status: ${bool(s.antiDelete)}`,
+        usage: "Reply on, off or toggle."
     },
     5: {
         title: "📊 STATUS ANTI-DELETE",
-        desc: "Recovers deleted status updates and forwards them to your DM.",
-        status: `💠 *Status:* ${s.statusAntiDelete ? on : off}`,
-        usage: `▸ Reply "5" or "toggle" — Toggle ON/OFF\n` +
-               `▸ Reply "on" or "off" — Set status\n` +
-               `▸ \`.antidelete status on\` — Enable\n` +
-               `▸ \`.antidelete status off\` — Disable`
+        desc: "Recover deleted statuses.",
+        status: `💠 Status: ${bool(s.statusAntiDelete)}`,
+        usage: "Reply on, off or toggle."
     },
     6: {
         title: "📞 ANTI-CALL",
-        desc: "Automatically rejects all incoming voice and video calls.",
-        status: `💠 *Status:* ${s.antiCall ? on : off}`,
-        usage: `▸ Reply "6" or "toggle" — Toggle ON/OFF\n` +
-               `▸ Reply "on" or "off" — Set status\n` +
-               `▸ \`.anticall on\` — Enable\n` +
-               `▸ \`.anticall off\` — Disable`
+        desc: "Automatically reject incoming calls.",
+        status: `💠 Status: ${bool(s.antiCall)}`,
+        usage: "Reply on, off or toggle."
     },
     7: {
         title: "🎭 GROUP EVENTS",
-        desc: "Sends welcome messages when new members join and goodbye messages when they leave. Also notifies about promotions/demotions. Set per-group or globally.",
-        status: `🔹 *All Groups (global):* ${s.groupEventsGlobal ? "✅ ON" : "❌ OFF"}\n` +
-                `🔹 *Promotion Alerts:* ${s.eventsPromote ? "✅ ON" : "❌ OFF"}`,
-        usage: `▸ Reply "7" or "toggle" — Toggle global events ON/OFF\n` +
-               `▸ Reply "on" or "off" — Set global events status\n` +
-               `▸ \`.events on\` — Enable in this group\n` +
-               `▸ \`.events off\` — Disable in this group\n` +
-               `▸ \`.events on all\` — Enable in ALL groups\n` +
-               `▸ \`.events off all\` — Disable in ALL groups\n` +
-               `▸ \`.events promote on/off\` — Show promotion notices\n` +
-               `▸ \`.events welcome <message>\` — Set welcome message\n` +
-               `▸ \`.events welcome <message> all\` — Set for all groups\n` +
-               `▸ \`.events goodbye <message>\` — Set goodbye message\n` +
-               `▸ \`.events goodbye <message> all\` — Set for all groups\n\n` +
-               `*Placeholders available:*\n` +
-               `▸ \`@user\` — Mentions member\n` +
-               `▸ \`{group}\` — Group name\n` +
-               `▸ \`{count}\` — Member count\n` +
-               `▸ \`{time}\` — Join/leave time\n` +
-               `▸ \`{desc}\` — Group description`
+        desc: "Welcome, goodbye and promotion event settings.",
+        status: `🔹 Global: ${bool(s.groupEventsGlobal)}\n🔹 Promotions: ${bool(s.eventsPromote)}`,
+        usage: "Reply on, off or toggle to change global events. Use your existing .events command for per-group settings."
     },
     8: {
         title: "🔄 PRESENCE",
-        desc: "Shows a 'typing...' indicator whenever someone messages you, making you appear active.",
-        status: `💠 *DM Presence:* ${s.dmPresence ? on : off}\n💠 *Group Presence:* ${s.groupPresence ? on : off}`,
-        usage: `▸ Reply "dm" — Toggle DM Presence\n` +
-               `▸ Reply "grp" — Toggle Group Presence\n` +
-               `▸ \`.presence dm on/off\` — Set in DMs\n` +
-               `▸ \`.presence grp on/off\` — Set in groups`
+        desc: "Typing/presence indicators.",
+        status: `💠 DM Presence: ${bool(s.dmPresence)}\n💠 Group Presence: ${bool(s.groupPresence)}`,
+        usage: "Reply dm or grp to toggle that setting."
     },
     9: {
         title: "👁️ AUTO VIEW STATUS",
-        desc: "Automatically views all contacts' status updates with a human-like random delay.",
-        status: `💠 *Auto View:* ${s.autoViewStatus ? on : off}\n💠 *Auto React:* ${s.autoLikeStatus ? on : off}`,
-        usage: `▸ Reply "9" or "toggle" — Toggle auto view ON/OFF\n` +
-               `▸ Reply "on" or "off" — Set status\n` +
-               `▸ \`.autostatus view on/off\` — Toggle auto view\n` +
-               `▸ \`.autostatus react on/off\` — Toggle status react`
+        desc: "Automatically view status updates.",
+        status: `💠 Auto View: ${bool(s.autoViewStatus)}\n💠 Auto React: ${bool(s.autoLikeStatus)}`,
+        usage: "Reply on, off or toggle to change auto-view. Use .autostatus for detailed controls."
     },
     10: {
         title: "💬 AUTO REPLY STATUS",
-        desc: "Automatically sends a reply to contacts after viewing their status updates.",
-        status: `💠 *Status:* ${s.autoReplyStatus ? on : off}\n💠 *Reply Text:* ${s.statusReplyText || "Nice status! ✨"}`,
-        usage: `▸ Reply "10" or "toggle" — Toggle auto reply ON/OFF\n` +
-               `▸ Reply "on" or "off" — Set status\n` +
-               `▸ \`.autostatus reply on/off\` — Toggle reply\n` +
-               `▸ \`.autostatus setreply <text>\` — Set reply text`
+        desc: "Automatically reply to status updates.",
+        status: `💠 Status: ${bool(s.autoReplyStatus)}\n💠 Reply text: ${s.statusReplyText || "Nice status! ✨"}`,
+        usage: "Reply on, off or toggle."
     },
     11: {
         title: "📖 AUTO READ & PRESENCE",
-        desc: "Configure auto-read and presence simulations (typing, recording, always online).",
-        status: `💠 *Auto Read:* ${s.autoRead ? on : off}\n` +
-                `💠 *Auto Type:* ${s.autoType ? on : off}\n` +
-                `💠 *Auto Record:* ${s.autoRecord ? on : off}\n` +
-                `💠 *Always Online:* ${s.alwaysOnline ? on : off}`,
-        usage: `▸ Reply "read" — Toggle Auto Read\n` +
-               `▸ Reply "type" — Toggle Auto Type\n` +
-               `▸ Reply "record" — Toggle Auto Record\n` +
-               `▸ Reply "online" — Toggle Always Online\n` +
-               `▸ Reply "toggle" — Toggle Auto Read ON/OFF\n` +
-               `▸ \`.autoread <read/type/record/online> <on/off>\` — Detailed config`
+        desc: "Configure read receipts and presence simulations.",
+        status: `💠 Auto Read: ${bool(s.autoRead)}\n💠 Auto Type: ${bool(s.autoType)}\n💠 Auto Record: ${bool(s.autoRecord)}\n💠 Always Online: ${bool(s.alwaysOnline)}`,
+        usage: "Reply read, type, record or online to toggle each setting."
     },
     12: {
         title: "📝 AUTO BIO",
-        desc: "Automatically rotates your WhatsApp About/bio text on a timer.",
-        status: `💠 *Status:* ${s.autoBio ? on : off}`,
-        usage: `▸ Reply "12" or "toggle" — Toggle ON/OFF\n` +
-               `▸ Reply "on" or "off" — Set status\n` +
-               `▸ \`.setbio <text1> | <text2> | ...\` — Set rotation texts`
+        desc: "Automatically rotate your WhatsApp About text.",
+        status: `💠 Status: ${bool(s.autoBio)}`,
+        usage: "Reply on, off or toggle. Use your existing .setbio command to configure texts."
     },
     13: {
-        title: "🤖 CHATBOT (AI)",
-        desc: "Enables AI-powered automatic replies to private messages using Gemini AI.",
-        status: `💠 *Status:* ${s.chatbotAI ? on : off}`,
-        usage: `▸ Reply "13" or "toggle" — Toggle ON/OFF\n` +
-               `▸ Reply "on" or "off" — Set status\n` +
-               `▸ \`.chatbot on\` — Enable AI chatbot\n` +
-               `▸ \`.chatbot off\` — Disable AI chatbot`
+        title: "🤖 CHATBOT AI",
+        desc: "AI-powered automatic replies.",
+        status: `💠 Status: ${bool(s.chatbotAI)}`,
+        usage: "Reply on, off or toggle."
     },
     14: {
-        title: "👋 GREET (DM AUTO-REPLY)",
-        desc: "Sends an automatic one-time greeting when someone messages you in private for the first time. Each contact only gets greeted once (until you clear the memory).",
-        status: `💠 *Status:* ${s.greetDM ? on : off}\n💠 *Message:* ${s.greetDMMsg || "Hello! 👋"}\n💠 *Greeted contacts:* ${(jsonStore.get("greeted_users") || []).length}`,
-        usage: `▸ Reply "14" or "toggle" — Toggle ON/OFF\n` +
-               `▸ Reply "on" or "off" — Set status\n` +
-               `▸ \`.greet on\` — Enable greetings\n` +
-               `▸ \`.greet off\` — Disable greetings\n` +
-               `▸ \`.greet set <message>\` — Custom greeting message\n` +
-               `▸ \`.greet clear\` — Reset memory (greet everyone again)`
+        title: "👋 GREET DM",
+        desc: "One-time greetings for private contacts.",
+        status: `💠 Status: ${bool(s.greetDM)}\n💠 Message: ${s.greetDMMsg || "Hello! 👋"}\n💠 Greeted contacts: ${(jsonStore.get("greeted_users") || []).length}`,
+        usage: "Reply on, off or toggle."
     },
     15: {
         title: "😍 AUTO REACT",
-        desc: "Automatically reacts with a random emoji to incoming messages.",
-        status: `💠 *DM React:* ${s.autoReactDM ? on : off}\n💠 *Group React:* ${s.autoReactGrp ? on : off}`,
-        usage: `▸ Reply "dm" — Toggle DM auto-react\n` +
-               `▸ Reply "grp" — Toggle Group auto-react\n` +
-               `▸ \`.settings 15 dm\` — Toggle DM auto-react\n` +
-               `▸ \`.settings 15 grp\` — Toggle Group auto-react`
+        desc: "Automatically react to incoming messages.",
+        status: `💠 DM React: ${bool(s.autoReactDM)}\n💠 Group React: ${bool(s.autoReactGrp)}`,
+        usage: "Reply dm or grp to toggle."
     },
     16: {
         title: "🔧 OTHER COMMANDS",
-        desc: `Admin and configuration utility commands for ${(s.botName || "Redtech Bot")}.`,
+        desc: "Additional administration tools.",
         status: "",
-        usage: `▸ \`.syncsettings all\` — Reset ALL settings to env var defaults\n` +
-               `▸ \`.syncsettings <name>\` — Reset one setting (e.g. anticall, antidelete, autoread)\n` +
-               `▸ \`.allvar\` — View all bot variables at once\n` +
-               `▸ \`.getvar <key>\` — Get a specific variable value\n` +
-               `▸ \`.setvar key=value\` — Change a variable directly\n` +
-               `▸ \`.systeminfo\` — View system info (uptime, memory, version)\n` +
-               `▸ \`.botpic\` — Set bot profile picture\n` +
-               `▸ \`.boturl\` — Set bot URL`
+        usage: "Use .syncsettings, .allvar, .getvar, .setvar, .systeminfo and .botpic if those commands are installed."
     }
 });
+
+const toggleMap = {
+    4: { on: { antiDelete: true }, off: { antiDelete: false } },
+    5: { on: { statusAntiDelete: true }, off: { statusAntiDelete: false } },
+    6: { on: { antiCall: true }, off: { antiCall: false } },
+    7: { on: { groupEventsGlobal: true }, off: { groupEventsGlobal: false } },
+    9: { on: { autoViewStatus: true }, off: { autoViewStatus: false } },
+    10: { on: { autoReplyStatus: true }, off: { autoReplyStatus: false } },
+    12: { on: { autoBio: true }, off: { autoBio: false } },
+    13: { on: { chatbotAI: true }, off: { chatbotAI: false } },
+    14: { on: { greetDM: true }, off: { greetDM: false } }
+};
 
 module.exports = {
     name: "settings",
@@ -217,179 +135,147 @@ module.exports = {
     description: "Manage bot configurations and automation",
     category: "owner",
     isOwnerOnly: true,
+
     execute: async (ctx) => {
-        const { sock, jid, args } = ctx;
-        const settings = getSettings();
+        const { sock, jid, args = [] } = ctx;
 
-        // ── Main menu (no args or choice 0) ────────────────────────────────────
-        if (args.length === 0 || parseInt(args[0]) === 0) {
-            const s = settings;
-            let menu  = `⚙️ *${(s.botName || "Redtech Bot").toUpperCase()} SETTINGS*\n`;
-            menu += `${"─".repeat(30)}\n\n`;
-            menu += `_Reply with \`.settings <number>\` (e.g. \`.settings 4\`) to configure:_\n\n`;
-            menu += `1. 🤖 Bot Configuration — Name: ${s.botName || "Redtech Bot"} | Mode: ${s.publicMode ? "public" : "private"}\n`;
-            menu += `2. 🔗 Anti-Link — Global: ${s.antiLinkGlobal === "off" ? "❌ OFF" : `✅ ${s.antiLinkGlobal.toUpperCase()}`} | Warn Limit: ${s.antiLinkLimit || 3}\n`;
-            menu += `3. 🏷️ Anti-Status-Mention — Global: ${s.antiStatusMentionGlobal === "off" ? "❌ OFF" : `✅ ${s.antiStatusMentionGlobal.toUpperCase()}`} | Warn Limit: ${s.antiStatusMentionLimit || 3}\n`;
-            menu += `4. 🗑️ Anti-Delete — ${s.antiDelete ? on : off}\n`;
-            menu += `5. 📊 Status Anti-Delete — ${s.statusAntiDelete ? on : off}\n`;
-            menu += `6. 📞 Anti-Call — ${s.antiCall ? on : off}\n`;
-            menu += `7. 🎭 Group Events — Global: ${s.groupEventsGlobal ? on : off} | Promote: ${s.eventsPromote ? on : off}\n`;
-            menu += `8. 🔄 Presence — DM: ${s.dmPresence ? on : off} | Grp: ${s.groupPresence ? on : off}\n`;
-            menu += `9. 👁️ Auto View Status — ${s.autoViewStatus ? on : off}\n`;
-            menu += `10. 💬 Auto Reply Status — ${s.autoReplyStatus ? on : off} | Auto React — ${s.autoLikeStatus ? on : off}\n`;
-            menu += `11. 📖 Auto Read & Presence — Read: ${s.autoRead ? on : off} | Type: ${s.autoType ? on : off} | Rec: ${s.autoRecord ? on : off} | Online: ${s.alwaysOnline ? on : off}\n`;
-            menu += `12. 📝 Auto Bio — ${s.autoBio ? on : off}\n`;
-            menu += `13. 🤖 Chatbot (AI) — ${s.chatbotAI ? on : off}\n`;
-            menu += `14. 👋 Greet (DM Auto-Reply) — ${s.greetDM ? on : off}\n`;
-            menu += `15. 😍 Auto React — DM: ${s.autoReactDM ? on : off} | Grp: ${s.autoReactGrp ? on : off}\n`;
-            menu += `16. 🔧 Other Commands\n`;
+        // React before running the settings command.
+        const incomingMessage =
+            ctx.msg ||
+            ctx.message ||
+            ctx.m ||
+            ctx.messageInfo;
 
-            return await sock.sendMessage(jid, { text: menu });
-        }
+        const messageKey = incomingMessage?.key || ctx.key;
 
-        const choice = parseInt(args[0]);
-        const sub = args[1]?.toLowerCase(); // e.g. "dm", "grp", "toggle", "on", "off"
-
-        const panels = getPanels(settings);
-        const p = panels[choice];
-
-        if (!p) {
-            return await sock.sendMessage(jid, { text: "⚠️ Invalid number. Use 1-16." });
-        }
-
-        // ── Inline toggles (settings that can be changed directly) ─────────────
-        const inlineToggles = {
-            1: () => {
-                if (sub === "mode" || sub === "toggle") return { publicMode: !settings.publicMode };
-                return {};
-            },
-            2: () => {
-                const modes = ["off", "warn", "delete", "remove"];
-                if (modes.includes(sub)) return { antiLinkGlobal: sub };
-                if (sub === "toggle" || sub === "2") {
-                    const currentIndex = modes.indexOf(settings.antiLinkGlobal || "off");
-                    const nextIndex = (currentIndex + 1) % modes.length;
-                    return { antiLinkGlobal: modes[nextIndex] };
-                }
-                return {};
-            },
-            3: () => {
-                const modes = ["off", "warn", "delete", "remove"];
-                if (modes.includes(sub)) return { antiStatusMentionGlobal: sub };
-                if (sub === "toggle" || sub === "3") {
-                    const currentIndex = modes.indexOf(settings.antiStatusMentionGlobal || "off");
-                    const nextIndex = (currentIndex + 1) % modes.length;
-                    return { antiStatusMentionGlobal: modes[nextIndex] };
-                }
-                return {};
-            },
-            4: () => {
-                if (sub === "on") return { antiDelete: true };
-                if (sub === "off") return { antiDelete: false };
-                if (sub === "toggle" || sub === "4") return { antiDelete: !settings.antiDelete };
-                return {};
-            },
-            5: () => {
-                if (sub === "on") return { statusAntiDelete: true };
-                if (sub === "off") return { statusAntiDelete: false };
-                if (sub === "toggle" || sub === "5") return { statusAntiDelete: !settings.statusAntiDelete };
-                return {};
-            },
-            6: () => {
-                if (sub === "on") return { antiCall: true };
-                if (sub === "off") return { antiCall: false };
-                if (sub === "toggle" || sub === "6") return { antiCall: !settings.antiCall };
-                return {};
-            },
-            7: () => {
-                if (sub === "on") return { groupEventsGlobal: true };
-                if (sub === "off") return { groupEventsGlobal: false };
-                if (sub === "toggle" || sub === "7") return { groupEventsGlobal: !settings.groupEventsGlobal };
-                return {};
-            },
-            8: () => {
-                if (sub === "grp") return { groupPresence: !settings.groupPresence };
-                if (sub === "dm") return { dmPresence: !settings.dmPresence };
-                if (sub === "toggle" || sub === "8") return { dmPresence: !settings.dmPresence };
-                return {};
-            },
-            9: () => {
-                if (sub === "on") return { autoViewStatus: true };
-                if (sub === "off") return { autoViewStatus: false };
-                if (sub === "toggle" || sub === "9") return { autoViewStatus: !settings.autoViewStatus };
-                return {};
-            },
-            10: () => {
-                if (sub === "on") return { autoReplyStatus: true };
-                if (sub === "off") return { autoReplyStatus: false };
-                if (sub === "toggle" || sub === "10") return { autoReplyStatus: !settings.autoReplyStatus };
-                return {};
-            },
-            11: () => {
-                if (sub === "read") return { autoRead: !settings.autoRead };
-                if (sub === "type") return { autoType: !settings.autoType };
-                if (sub === "record") return { autoRecord: !settings.autoRecord };
-                if (sub === "online") return { alwaysOnline: !settings.alwaysOnline };
-                if (sub === "on") return { autoRead: true };
-                if (sub === "off") return { autoRead: false };
-                if (sub === "toggle" || sub === "11") return { autoRead: !settings.autoRead };
-                return {};
-            },
-            12: () => {
-                if (sub === "on") return { autoBio: true };
-                if (sub === "off") return { autoBio: false };
-                if (sub === "toggle" || sub === "12") return { autoBio: !settings.autoBio };
-                return {};
-            },
-            13: () => {
-                if (sub === "on") return { chatbotAI: true };
-                if (sub === "off") return { chatbotAI: false };
-                if (sub === "toggle" || sub === "13") return { chatbotAI: !settings.chatbotAI };
-                return {};
-            },
-            14: () => {
-                if (sub === "on") return { greetDM: true };
-                if (sub === "off") return { greetDM: false };
-                if (sub === "toggle" || sub === "14") return { greetDM: !settings.greetDM };
-                return {};
-            },
-            15: () => {
-                if (sub === "grp") return { autoReactGrp: !settings.autoReactGrp };
-                if (sub === "dm") return { autoReactDM: !settings.autoReactDM };
-                if (sub === "toggle" || sub === "15") return { autoReactDM: !settings.autoReactDM };
-                return {};
+        try {
+            if (messageKey && jid) {
+                await sock.sendMessage(jid, {
+                    react: {
+                        text: "⚙️",
+                        key: messageKey
+                    }
+                });
             }
-        };
+        } catch (error) {
+            console.error("[Settings Reaction Error]", error.message);
+        }
 
-        if (sub && inlineToggles[choice]) {
-            const updates = inlineToggles[choice]();
-            if (Object.keys(updates).length > 0) {
-                Object.assign(settings, updates);
-                await updateSettings(updates);
-                if (updates.alwaysOnline !== undefined) {
-                    await sock.sendPresenceUpdate(updates.alwaysOnline ? "available" : "unavailable").catch(() => {});
+        try {
+            const settings = getSettings();
+            const choice = Number.parseInt(args[0], 10);
+            const sub = String(args[1] || "").toLowerCase();
+
+            // Main menu
+            if (!args.length || choice === 0 || Number.isNaN(choice)) {
+                const s = settings;
+                const menu = [
+                    `⚙️ *${(s.botName || "Redtech Bot").toUpperCase()} SETTINGS*`,
+                    "──────────────────────────────",
+                    "",
+                    "Reply with `.settings <number>` to open a section:",
+                    "",
+                    `1. 🤖 Bot Configuration — ${s.publicMode ? "Public" : "Private"}`,
+                    `2. 🔗 Anti-Link — ${modeLabel(s.antiLinkGlobal)}`,
+                    `3. 🏷️ Anti-Status-Mention — ${modeLabel(s.antiStatusMentionGlobal)}`,
+                    `4. 🗑️ Anti-Delete — ${bool(s.antiDelete)}`,
+                    `5. 📊 Status Anti-Delete — ${bool(s.statusAntiDelete)}`,
+                    `6. 📞 Anti-Call — ${bool(s.antiCall)}`,
+                    `7. 🎭 Group Events — ${bool(s.groupEventsGlobal)}`,
+                    `8. 🔄 Presence — DM: ${bool(s.dmPresence)} | Group: ${bool(s.groupPresence)}`,
+                    `9. 👁️ Auto View Status — ${bool(s.autoViewStatus)}`,
+                    `10. 💬 Auto Reply Status — ${bool(s.autoReplyStatus)}`,
+                    `11. 📖 Auto Read & Presence`,
+                    `12. 📝 Auto Bio — ${bool(s.autoBio)}`,
+                    `13. 🤖 Chatbot AI — ${bool(s.chatbotAI)}`,
+                    `14. 👋 Greet DM — ${bool(s.greetDM)}`,
+                    `15. 😍 Auto React`,
+                    "16. 🔧 Other Commands",
+                    "",
+                    "Example: `.settings 4 toggle`"
+                ].join("\n");
+
+                return await sock.sendMessage(jid, { text: menu });
+            }
+
+            if (choice < 1 || choice > 16) {
+                return await sock.sendMessage(jid, {
+                    text: "⚠️ Invalid number. Use `.settings` or choose a number from 1 to 16."
+                });
+            }
+
+            // Apply requested change.
+            let changes = {};
+            let updated = false;
+
+            if (choice === 1) {
+                if (sub === "mode" || sub === "toggle") {
+                    changes = { publicMode: !settings.publicMode };
+                }
+            } else if (choice === 2 || choice === 3) {
+                const modes = ["off", "warn", "delete", "remove"];
+                if (modes.includes(sub)) {
+                    changes = choice === 2
+                        ? { antiLinkGlobal: sub }
+                        : { antiStatusMentionGlobal: sub };
+                } else if (sub === "toggle") {
+                    const key = choice === 2 ? "antiLinkGlobal" : "antiStatusMentionGlobal";
+                    const current = settings[key] || "off";
+                    const next = (modes.indexOf(current) + 1) % modes.length;
+                    changes = { [key]: modes[next] };
+                }
+            } else if (choice === 8) {
+                if (sub === "dm") changes = { dmPresence: !settings.dmPresence };
+                if (sub === "grp") changes = { groupPresence: !settings.groupPresence };
+            } else if (choice === 11) {
+                const keys = {
+                    read: "autoRead",
+                    type: "autoType",
+                    record: "autoRecord",
+                    online: "alwaysOnline"
+                };
+                if (keys[sub]) changes = { [keys[sub]]: !settings[keys[sub]] };
+                if (sub === "on") changes = { autoRead: true };
+                if (sub === "off") changes = { autoRead: false };
+            } else if (choice === 15) {
+                if (sub === "dm") changes = { autoReactDM: !settings.autoReactDM };
+                if (sub === "grp") changes = { autoReactGrp: !settings.autoReactGrp };
+            } else if (toggleMap[choice]) {
+                if (sub === "on" || sub === "off") {
+                    changes = toggleMap[choice][sub] || {};
+                } else if (sub === "toggle" || sub === String(choice)) {
+                    const key = Object.keys(toggleMap[choice].on)[0];
+                    changes = { [key]: !settings[key] };
                 }
             }
-            // Re-fetch updated settings for the panel
-            const updatedPanels = getPanels(settings);
-            const up = updatedPanels[choice];
-            const separator = "━━━━━━━━━━━━━━━━━━";
-            let reply = `*${up.title}*\n${separator}\n\n`;
-            reply += `${up.status}\n\n`;
-            reply += `✅ *Updated!*\n\n`;
-            reply += `🔧 *How to use:*\n${up.usage}\n\n`;
-            reply += `_Reply 0 or \`.settings\` to go back_`;
-            return await sock.sendMessage(jid, { text: reply });
+
+            if (Object.keys(changes).length) {
+                await updateSettings(changes);
+                updated = true;
+            }
+
+            const latest = getSettings();
+            const panel = getPanels(latest)[choice];
+
+            let response = `*${panel.title}*\n`;
+            response += "──────────────────────────────\n";
+            if (panel.desc) response += `${panel.desc}\n\n`;
+            if (panel.status) response += `${panel.status}\n\n`;
+            response += `${panel.usage}\n\n`;
+
+            if (updated) {
+                response += "✅ *Settings updated.*";
+            } else {
+                response += "ℹ️ No setting was changed. Reply with a supported option shown above.";
+            }
+
+            return await sock.sendMessage(jid, { text: response });
+        } catch (error) {
+            console.error("[Settings Command Error]", error);
+            return await sock.sendMessage(jid, {
+                text: "❌ An error occurred while processing settings. Check the bot logs."
+            }).catch(() => {});
         }
-
-        // ── Detail panels (no sub action specified) ───────────────────────────
-        const separator = "━━━━━━━━━━━━━━━━━━";
-        let reply = `*${p.title}*\n${separator}\n\n`;
-        reply += `${p.desc}\n\n`;
-        if (p.status) reply += `${p.status}\n\n`;
-        reply += `🔧 *How to use:*\n${p.usage}\n\n`;
-        reply += `_Reply 0 or \`.settings\` to go back to menu_`;
-
-        return await sock.sendMessage(jid, { text: reply });
     }
 };
+                    
