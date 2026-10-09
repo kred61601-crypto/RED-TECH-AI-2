@@ -1,6 +1,6 @@
 const mongoose = require("mongoose");
-const { isOnline } = require("../firebox/db");
-const jsonStore = require("../firebox/jsonStore");
+const { isOnline } = require("../redtech/db");
+const jsonStore = require("../redtech/jsonStore");
 
 const rulesSchema = new mongoose.Schema({
     groupId:   { type: String, required: true, unique: true },
