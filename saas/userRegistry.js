@@ -3,7 +3,7 @@ const bcrypt = require("bcryptjs");
 const { MongoClient } = require("mongodb");
 
 function connectionUri() { return process.env.MONGO_URL || process.env.MONGODB_URI || process.env.MONGO_PUBLIC_URL; }
-const databaseName = process.env.MONGODB_DATABASE || "firebox";
+const databaseName = process.env.MONGODB_DATABASE || "redtech";
 const collectionName = process.env.MONGODB_USERS_COLLECTION || "users";
 let client;
 let collection;
