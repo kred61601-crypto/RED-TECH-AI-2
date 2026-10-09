@@ -1,35 +1,36 @@
-<svg width="800" height="320" xmlns="http://www.w3.org/2000/svg">
+<svg width="800" height="300" xmlns="http://www.w3.org/2000/svg">
   <defs>
-    <!-- Mixed color background, not pure black -->
-    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0%" stop-color="#1a0a2e"/>
-      <stop offset="50%" stop-color="#2d0a2e"/>
-      <stop offset="100%" stop-color="#4a0a2e"/>
+    <linearGradient id="redGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#ff0000"><animate attributeName="stop-color" values="#ff0000;#ff6a00;#ff0000" dur="2s" repeatCount="indefinite"/></stop>
+      <stop offset="100%" stop-color="#ff6a00"><animate attributeName="stop-color" values="#ff6a00;#ff0000;#ff6a00" dur="2s" repeatCount="indefinite"/></stop>
     </linearGradient>
-    <linearGradient id="textGrad" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0%" stop-color="#ff8a50"/>
-      <stop offset="100%" stop-color="#ff2a2a"/>
-    </linearGradient>
+    <filter id="glow"><feGaussianBlur stdDeviation="6" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
   </defs>
-  
-  <!-- Smaller background, mixed colors -->
-  <rect width="800" height="300" rx="30" fill="url(#bg)"/>
-  
-  <!-- Floating love hearts -->
-  <g opacity="0.8" font-size="24">
-    <text x="50" y="60">💖</text>
-    <text x="150" y="80">❤️</text>
-    <text x="300" y="50">💕</text>
-    <text x="500" y="70">💜</text>
-    <text x="700" y="60">💖</text>
-    <text x="100" y="250">💜</text>
-    <text x="250" y="270">💖</text>
-    <text x="650" y="250">❤️</text>
+
+  <!-- BLACK BACKGROUND -->
+  <rect width="800" height="300" rx="30" fill="black"/>
+
+  <!-- FLOWING LOVE HEARTS - ANIMATED -->
+  <g opacity="0.6">
+    <text x="100" y="150" font-size="30">❤️<animateTransform attributeName="transform" type="translate" values="0 0; 0 -200; 0 0" dur="4s" repeatCount="indefinite"/></text>
+    <text x="200" y="200" font-size="25">💖<animateTransform attributeName="transform" type="translate" values="0 0; 0 -150; 0 0" dur="3s" repeatCount="indefinite"/></text>
+    <text x="600" y="180" font-size="30">💕<animateTransform attributeName="transform" type="translate" values="0 0; 0 -180; 0 0" dur="3.5s" repeatCount="indefinite"/></text>
+    <text x="700" y="220" font-size="20">❤️<animateTransform attributeName="transform" type="translate" values="0 0; 0 -100; 0 0" dur="5s" repeatCount="indefinite"/></text>
+    <text x="50" y="220" font-size="20">💗<animateTransform attributeName="transform" type="translate" values="0 0; 0 -120; 0 0" dur="4.5s" repeatCount="indefinite"/></text>
+    <text x="500" y="250" font-size="28">💖<animateTransform attributeName="transform" type="translate" values="0 0; 0 -200; 0 0" dur="4s" repeatCount="indefinite"/></text>
   </g>
 
-  <!-- Centered Text -->
-  <g text-anchor="middle">
-    <text x="400" y="160" font-family="Arial Black" font-size="68" font-weight="900" fill="url(#textGrad)">🔥 𝐑𝐄𝐃𝐓𝐄𝐂𝐇 𝐀𝐈</text>
-    <text x="400" y="210" font-family="Arial" font-size="16" letter-spacing="5" fill="#ffffff" opacity="0.9">THE ULTIMATE WHATSAPP POWER-BOT</text>
+  <!-- REDTECH AI - ANIMATED PULSING -->
+  <g filter="url(#glow)">
+    <text x="400" y="150" text-anchor="middle" font-family="Arial Black" font-size="62" font-weight="900" fill="url(#redGrad)" letter-spacing="2">
+      🔥 ✦ 𝐑𝐄𝐃𝐓𝐄𝐂𝐇-𝐀𝐈 ┃ 
+      <animateTransform attributeName="transform" type="scale" values="1;1.05;1" additive="sum" dur="1.5s" repeatCount="indefinite" />
+    </text>
   </g>
+
+  <!-- SUBTITLE - FADE ANIMATION -->
+  <text x="400" y="190" text-anchor="middle" font-family="Arial" font-size="16" letter-spacing="6" fill="white" opacity="0.9">
+    THE ULTIMATE WHATSAPP POWER-BOT
+    <animate attributeName="opacity" values="0.7;1;0.7" dur="2s" repeatCount="indefinite"/>
+  </text>
 </svg>
