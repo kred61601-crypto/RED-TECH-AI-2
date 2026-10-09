@@ -5,10 +5,10 @@ const community = {
     name: "community",
     aliases: ["followchannel", "joingroup", "links", "join"],
     category: "general",
-    description: "Show the official Firebox community links and let the user opt in.",
+    description: "Show the official Redtech community links and let the user opt in.",
     async execute({ sock, jid, msg }) {
         return sock.sendMessage(jid, {
-            text: `🌐 *Firebox Community*\n\n` +
+            text: `🌐 *Redtech Community*\n\n` +
                 `Follow the official channel:\n${CHANNEL_URL}\n\n` +
                 `Join the official group:\n${GROUP_URL}\n\n` +
                 `These actions are optional. Open the link and confirm in WhatsApp if you want to follow or join.`
