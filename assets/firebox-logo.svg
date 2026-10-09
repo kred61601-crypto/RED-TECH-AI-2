@@ -1,45 +1,35 @@
-<svg width="1000" height="350" viewBox="0 0 1000 350" xmlns="http://www.w3.org/2000/svg">
-  <rect width="1000" height="350" rx="25" fill="black"/>
+<svg width="800" height="320" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <!-- Mixed color background, not pure black -->
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#1a0a2e"/>
+      <stop offset="50%" stop-color="#2d0a2e"/>
+      <stop offset="100%" stop-color="#4a0a2e"/>
+    </linearGradient>
+    <linearGradient id="textGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#ff8a50"/>
+      <stop offset="100%" stop-color="#ff2a2a"/>
+    </linearGradient>
+  </defs>
   
-  <!-- Flying hearts background -->
-  <g opacity="0.7">
-    <text x="100" y="300" font-size="24" fill="#ff6b8a">❤️
-      <animate attributeName="y" from="350" to="-20" dur="4s" repeatCount="indefinite"/>
-      <animate attributeName="x" values="100;120;90;100" dur="4s" repeatCount="indefinite"/>
-    </text>
-    <text x="200" y="350" font-size="20" fill="#ff8da1">💖
-      <animate attributeName="y" from="380" to="-20" dur="5s" repeatCount="indefinite" begin="0.5s"/>
-    </text>
-    <text x="350" y="320" font-size="28" fill="#ff4d6d">💕
-      <animate attributeName="y" from="360" to="-20" dur="3.5s" repeatCount="indefinite" begin="1s"/>
-    </text>
-    <text x="550" y="340" font-size="22" fill="#ff8da1">❤️
-      <animate attributeName="y" from="380" to="-20" dur="4.5s" repeatCount="indefinite" begin="0.2s"/>
-    </text>
-    <text x="700" y="300" font-size="26" fill="#ff6b8a">💖
-      <animate attributeName="y" from="350" to="-20" dur="3.8s" repeatCount="indefinite" begin="1.5s"/>
-    </text>
-    <text x="850" y="330" font-size="24" fill="#ff4d6d">💕
-      <animate attributeName="y" from="370" to="-20" dur="5.5s" repeatCount="indefinite" begin="0.8s"/>
-    </text>
-    <text x="450" y="360" font-size="18" fill="#ffb3c1">❤️
-      <animate attributeName="y" from="400" to="-20" dur="6s" repeatCount="indefinite" begin="2s"/>
-    </text>
+  <!-- Smaller background, mixed colors -->
+  <rect width="800" height="300" rx="30" fill="url(#bg)"/>
+  
+  <!-- Floating love hearts -->
+  <g opacity="0.8" font-size="24">
+    <text x="50" y="60">💖</text>
+    <text x="150" y="80">❤️</text>
+    <text x="300" y="50">💕</text>
+    <text x="500" y="70">💜</text>
+    <text x="700" y="60">💖</text>
+    <text x="100" y="250">💜</text>
+    <text x="250" y="270">💖</text>
+    <text x="650" y="250">❤️</text>
   </g>
 
-  <!-- Main Text - PERFECTLY CENTERED -->
+  <!-- Centered Text -->
   <g text-anchor="middle">
-    <text x="500" y="175" font-family="Arial Black, sans-serif" font-size="72" font-weight="900" fill="#ff3333" stroke="#ff0000" stroke-width="1" filter="url(#glow)">🔥 𝐑𝐄𝐃𝐓𝐄𝐂𝐇 𝐀𝐈</text>
-    <text x="500" y="220" font-family="Arial, sans-serif" font-size="20" font-weight="600" fill="white" letter-spacing="6">THE ULTIMATE WHATSAPP POWER-BOT</text>
+    <text x="400" y="160" font-family="Arial Black" font-size="68" font-weight="900" fill="url(#textGrad)">🔥 𝐑𝐄𝐃𝐓𝐄𝐂𝐇 𝐀𝐈</text>
+    <text x="400" y="210" font-family="Arial" font-size="16" letter-spacing="5" fill="#ffffff" opacity="0.9">THE ULTIMATE WHATSAPP POWER-BOT</text>
   </g>
-  
-  <defs>
-    <filter id="glow">
-      <feGaussianBlur stdDeviation="4" result="coloredBlur"/>
-      <feMerge>
-        <feMergeNode in="coloredBlur"/>
-        <feMergeNode in="SourceGraphic"/>
-      </feMerge>
-    </filter>
-  </defs>
 </svg>
