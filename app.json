@@ -1,0 +1,192 @@
+{
+  "name": "𝐑𝐄𝐃𝐓𝐄𝐂𝐇-𝐀𝐈",
+  "description": "Javascript WhatsApp bot made by ☬ 👑 𝕂𝕀ℕ𝔾 ℝ𝔼𝔻 👑 ☬ 𓃵🔥 - 𝐑𝐄𝐃𝐓𝐄𝐂𝐇-𝐀𝐈",
+  "logo": "https://files.catbox.moe/1k4htj.jpg",
+  "keywords": ["𝐑𝐄𝐃𝐓𝐄𝐂𝐇-𝐀𝐈", "whatsapp-bot", "redtech"],
+  "success_url": "/",
+  "stack": "container",
+  "env": {
+    "SESSION_ID": {
+      "description": "Your unique bot session ID (starts with REDTECH~). Get from /code",
+      "required": true,
+      "type": "string"
+    },
+    "SUDO": {
+      "description": "The Super-Admin phone number with country code (e.g. 254100969922)",
+      "required": false,
+      "type": "string"
+    },
+    "OWNERS": {
+      "description": "Additional admin numbers separated by commas",
+      "required": false,
+      "type": "string"
+    },
+    "PREFIX": {
+      "description": "Bot command prefix",
+      "required": false,
+      "type": "string",
+      "value": "."
+    },
+    "MODE": {
+      "description": "Bot mode public/private/inbox/group",
+      "required": false,
+      "type": "string",
+      "value": "public"
+    },
+    "STICKER_NAME": {
+      "description": "Sticker pack name",
+      "required": false,
+      "value": "☬ 👑 𝕂𝕀ℕ𝔾 ℝ𝔼𝔻 👑 ☬ 𓃵🔥 - 𝐑𝐄𝐃𝐓𝐄𝐂𝐇-𝐀𝐈"
+    },
+    "ANTI_CALL": {
+      "description": "Block calls",
+      "required": false,
+      "value": "false"
+    },
+    "AUTO_DOWNLOADER": {
+      "description": "Auto download TikTok, FB, YT etc",
+      "required": false,
+      "value": "false"
+    },
+    "ANTI_DELETE": {
+      "description": "Show deleted messages",
+      "required": false,
+      "value": "true"
+    },
+    "ALWAYS_ONLINE": {
+      "description": "Always online",
+      "required": false,
+      "value": "false"
+    },
+    "AUTO_REPLY": {
+      "description": "Automatic reply",
+      "required": false,
+      "value": "false"
+    },
+    "AUTO_STICKER": {
+      "description": "Automatic sticker",
+      "required": false,
+      "value": "false"
+    },
+    "AUTO_STATUS_SEEN": {
+      "description": "Auto status seen",
+      "required": false,
+      "value": "true"
+    },
+    "AUTO_STATUS_REACT": {
+      "description": "Auto status reaction",
+      "required": false,
+      "value": "false"
+    },
+    "AUTO_STATUS_REPLY": {
+      "description": "Auto reply on status",
+      "required": false,
+      "value": "false"
+    },
+    "AUTO_STATUS_MSG": {
+      "description": "Custom status reply message",
+      "required": false,
+      "value": "*SEEN YOUR STATUS BY 𝐑𝐄𝐃𝐓𝐄𝐂𝐇-𝐀𝐈 ❤️*"
+    },
+    "OWNER_NAME": {
+      "description": "Bot Owner Name",
+      "required": false,
+      "value": "☬ 👑 𝕂𝕀ℕ𝔾 ℝ𝔼𝔻 👑 ☬"
+    },
+    "OWNER_NUMBER": {
+      "description": "Owner number",
+      "required": false,
+      "value": "254100969922"
+    },
+    "BOT_NAME": {
+      "description": "Bot name",
+      "required": false,
+      "value": "𝐑𝐄𝐃𝐓𝐄𝐂𝐇-𝐀𝐈"
+    },
+    "ANTI_LINK": {
+      "description": "Auto remove group links",
+      "required": false,
+      "value": "true"
+    },
+    "ANTI_LINK_KICK": {
+      "description": "Kick on link",
+      "required": false,
+      "value": "false"
+    },
+    "ANTI_BAD": {
+      "description": "Auto delete bad words",
+      "required": false,
+      "value": "false"
+    },
+    "MENTION_REPLY": {
+      "description": "Mention reply",
+      "required": false,
+      "value": "false"
+    },
+    "MENU_IMAGE_URL": {
+      "description": "Menu image URL",
+      "required": false,
+      "value": "https://files.catbox.moe/1k4htj.jpg"
+    },
+    "DESCRIPTION": {
+      "description": "Menu caption",
+      "required": false,
+      "value": "*CREATER ☬ 👑 𝕂𝕀ℕ𝔾 ℝ𝔼𝔻 👑 ☬ 𓃵🔥 - 𝐑𝐄𝐃𝐓𝐄𝐂𝐇-𝐀𝐈*"
+    },
+    "DELETE_LINKS": {
+      "description": "Remove links without kicking",
+      "required": false,
+      "value": "false"
+    },
+    "AUTO_RECORDING": {
+      "description": "Auto recording",
+      "required": false,
+      "value": "false"
+    },
+    "AUTO_TYPING": {
+      "description": "Auto typing",
+      "required": false,
+      "value": "false"
+    },
+    "AUTO_REACT": {
+      "description": "React on every message with random keyboard emoji",
+      "required": false,
+      "value": "true"
+    },
+    "REACT_EMOJIS": {
+      "description": "Reaction emojis (comma-separated)",
+      "required": false,
+      "value": "❤️,🔥,👍,😍,😂,😮,😎,🥰,👋,🤝,💯,✨,⭐,🎉,🤗,😊,🙌,💪,👏,✅,🎈,🎊,🏆,⚡,💫,👌,🤙,💖,💕,💗,👑,💎,🌟,🎯,🎨,🎭,🎪,🎢,🎡,🎠"
+    },
+    "OWNER_EMOJIS": {
+      "description": "Owner reaction emojis (comma-separated)",
+      "required": false,
+      "value": "👑,💎,⭐,✨,🔥,💯,✅,🎉,🤖,⚡,💫,🌟,🏆,👾,🚀,💪,🎯,🔱,♾️,⚜️"
+    },
+    "ANTI_DEL_PATH": {
+      "description": "Deleted message resend path - same or inbox",
+      "required": false,
+      "value": "inbox"
+    },
+    "ADMIN_EVENTS": {
+      "description": "Notify promote/demote",
+      "required": false,
+      "value": "false"
+    },
+    "WELCOME": {
+      "description": "Welcome/goodbye in groups",
+      "required": false,
+      "value": "false"
+    },
+    "READ_MESSAGE": {
+      "description": "Read all messages",
+      "required": false,
+      "value": "false"
+    }
+  },
+  "buildpacks": [
+    {
+      "url": "https://github.com/heroku/heroku-buildpack-nodejs.git"
+    }
+  ]
+    }
