@@ -1,5 +1,5 @@
 /**
- * BotInstance — one WhatsApp connection per SaaS user.
+ * AiInstance — one WhatsApp connection per SaaS user.
  *
  * Extracts the connectionLogic from index.js and scopes all state
  * (sock, latestQr, myJid, settings, jsonStore) to the instance.
@@ -21,7 +21,7 @@ const P = require("pino");
 const { handleMessages } = require("../lib/commandHandler");
 const { handleAutomation, handleMessageDelete } = require("../lib/automation");
 const botContext = require("../lib/botContext");
-const { createUserStore } = require("../firebox/jsonStore");
+const { createUserStore } = require("../redtech/jsonStore");
 const SettingsManager = require("./settingsManager");
 const { version: botVersion } = require("../config");
 
@@ -426,7 +426,7 @@ class BotInstance {
 
                 // Init DB
                 try {
-                    const { initDb } = require("../firebox/db");
+                    const { initDb } = require("../redtech/db");
                     await initDb();
                 } catch (_) {}
 
