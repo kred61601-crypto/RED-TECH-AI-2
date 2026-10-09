@@ -56,7 +56,7 @@
   <g transform="translate(40, 20)">
     <!-- Animated Flame Icon -->
     <g transform="translate(0, 10)">
-      <text font-size="50" y="50">🔥</text>
+      <text font-size="60" y="87">🔥</text>
     </g>
     <!-- Text group -->
     <text x="120" y="87" class="animated-text"> 🔥 𝐑𝐄𝐃𝐓𝐄𝐂𝐇 𝐀𝐈</text>
