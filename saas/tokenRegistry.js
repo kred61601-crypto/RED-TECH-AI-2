@@ -2,7 +2,7 @@ const crypto = require("crypto");
 const fs = require("fs");
 const path = require("path");
 const mongoose = require("mongoose");
-const { initDb, isOnline } = require("../firebox/db");
+const { initDb, isOnline } = require("../redtech/db");
 
 const storePath = path.join(__dirname, "..", "database", "redtech_tokens.json");
 const encryptionKey = crypto.createHash("sha256").update(String(process.env.REDTECH_TOKEN_SECRET || process.env.SESSION_SECRET || "redtech-development-secret")).digest();
@@ -131,7 +131,7 @@ module.exports = {
     },
     async listActiveBotIds() {
         if (await useMongo()) {
-            return (await FireboxToken.find({ status: "active" }).select({ tokenHash: 1 }).lean()).map(item => item.tokenHash);
+            return (await RedtechToken.find({ status: "active" }).select({ tokenHash: 1 }).lean()).map(item => item.tokenHash);
         }
         return readRecords().filter(item => item.status === "active").map(item => item.tokenHash);
     },
