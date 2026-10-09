@@ -1,6 +1,6 @@
 const path = require("path");
 const fs = require("fs");
-const { getUserCount } = require("../../firebox/userModel");
+const { getUserCount } = require("../../redtech/userModel");
 const { getSettings } = require("../../lib/settings");
 
 module.exports = {
