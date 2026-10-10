@@ -1,65 +1,165 @@
-<svg width="100%" height="120" viewBox="0 0 800 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+
+<svg xmlns="http://www.w3.org/2000/svg" width="100%" viewBox="0 0 800 260">
   <defs>
-    <linearGradient id="glowGrad" x1="0%" y1="0%" x2="100%" y2="0%">
-      <stop offset="0%" stop-color="#FF6A00" />
-      <stop offset="50%" stop-color="#FF0080" />
-      <stop offset="100%" stop-color="#FF6A00" />
+    <linearGradient id="neon" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#ff2600">
+        <animate attributeName="stop-color" values="#ff2600;#ff0080;#ffb000;#ff2600" dur="6s" repeatCount="indefinite"/>
+      </stop>
+      <stop offset="50%" stop-color="#ff0080">
+        <animate attributeName="stop-color" values="#ff0080;#ffb000;#ff2600;#ff0080" dur="6s" repeatCount="indefinite"/>
+      </stop>
+      <stop offset="100%" stop-color="#ffb000">
+        <animate attributeName="stop-color" values="#ffb000;#ff2600;#ff0080;#ffb000" dur="6s" repeatCount="indefinite"/>
+      </stop>
     </linearGradient>
-    <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
-      <feGaussianBlur stdDeviation="8" result="blur" />
+
+    <radialGradient id="bubble">
+      <stop offset="0%" stop-color="#ffb6df" stop-opacity=".04"/>
+      <stop offset="75%" stop-color="#ff168c" stop-opacity=".25"/>
+      <stop offset="100%" stop-color="#ff55b0" stop-opacity=".9"/>
+    </radialGradient>
+
+    <filter id="glow" x="-40%" y="-40%" width="180%" height="180%">
+      <feGaussianBlur stdDeviation="4" result="blur"/>
       <feMerge>
-        <feMergeNode in="blur" />
-        <feMergeNode in="SourceGraphic" />
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
       </feMerge>
     </filter>
+
+    <clipPath id="scene">
+      <rect width="800" height="260" rx="20"/>
+    </clipPath>
   </defs>
+
   <style>
-    @keyframes blink {
-      0%, 100% { opacity: 1; filter: drop-shadow(0 0 15px #FF6A00); }
-      50% { opacity: 0.4; filter: drop-shadow(0 0 2px #FF0080); }
-    }
-    @keyframes move {
-      0% { transform: translateX(0px); }
-      50% { transform: translateX(8px); }
-      100% { transform: translateX(0px); }
-    }
-    .animated-text {
-      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    .brand {
+      font-family: Arial, Helvetica, sans-serif;
+      font-size: 57px;
       font-weight: 900;
-      font-size: 52px;
-      fill: url(#glowGrad);
-      animation: blink 2s infinite ease-in-out, move 4s infinite ease-in-out;
+      letter-spacing: 1px;
+      fill: url(#neon);
+      filter: url(#glow);
+      animation: pulse 2.5s ease-in-out infinite;
     }
-    .sub-text {
-      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
-      font-weight: 600;
+
+    .tagline {
+      font-family: Arial, Helvetica, sans-serif;
       font-size: 16px;
-      fill: #A0AEC0;
-      letter-spacing: 5px;
+      font-weight: bold;
+      letter-spacing: 3px;
+      fill: #fff;
     }
-     <!-- Smaller background, mixed colors -->
-  <rect width="800" height="300" rx="30" fill="url(#bg)"/>
-  
-  <!-- Floating love hearts -->
-  <g opacity="0.8" font-size="24">
-    <text x="50" y="60">💖</text>
-    <text x="150" y="80">❤️</text>
-    <text x="300" y="50">💕</text>
-    <text x="500" y="70">💜</text>
-    <text x="700" y="60">💖</text>
-    <text x="100" y="250">💜</text>
-    <text x="250" y="270">💖</text>
-    <text x="650" y="250">❤️</text>
-  </g>
+
+    .heart {
+      font-size: 23px;
+      opacity: 0;
+      animation: floatUp 7s linear infinite;
+    }
+
+    .h1 { animation-delay: 0s; }
+    .h2 { animation-delay: 1s; }
+    .h3 { animation-delay: 2s; }
+    .h4 { animation-delay: 3s; }
+    .h5 { animation-delay: 4s; }
+    .h6 { animation-delay: 2.5s; }
+    .h7 { animation-delay: 1.5s; }
+    .h8 { animation-delay: 3.5s; }
+
+    .bubble {
+      fill: url(#bubble);
+      stroke: #ff68c4;
+      stroke-opacity: .75;
+      stroke-width: 1.2;
+    }
+
+    @keyframes floatUp {
+      0% { transform: translateY(290px) translateX(0) scale(.6); opacity: 0; }
+      15% { opacity: .9; }
+      50% { transform: translateY(125px) translateX(22px) scale(1); opacity: .8; }
+      85% { opacity: .6; }
+      100% { transform: translateY(-50px) translateX(-16px) scale(.7); opacity: 0; }
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: .78; }
+    }
   </style>
-  <rect width="100%" height="100%" rx="12" fill="#0D0E15" />
-  <g transform="translate(40, 20)">
-    <!-- Animated Flame Icon -->
-    <g transform="translate(0, 10)">
-      <text font-size="60" y="87">🔥</text>
+
+  <g clip-path="url(#scene)">
+    <!-- Black background -->
+    <rect width="800" height="260" fill="#030305"/>
+
+    <!-- Red and orange background glow -->
+    <ellipse cx="100" cy="120" rx="190" ry="120" fill="#ff003c" opacity=".12">
+      <animate attributeName="opacity" values=".05;.16;.05" dur="5s" repeatCount="indefinite"/>
+    </ellipse>
+
+    <ellipse cx="720" cy="150" rx="180" ry="130" fill="#ff6a00" opacity=".12">
+      <animate attributeName="opacity" values=".04;.15;.04" dur="6s" repeatCount="indefinite"/>
+    </ellipse>
+
+    <!-- Flowing love emojis -->
+    <text class="heart h1" x="35" y="-20">❤️</text>
+    <text class="heart h2" x="130" y="-20">💕</text>
+    <text class="heart h3" x="235" y="-20">💖</text>
+    <text class="heart h4" x="340" y="-20">💗</text>
+    <text class="heart h5" x="450" y="-20">💘</text>
+    <text class="heart h6" x="555" y="-20">💞</text>
+    <text class="heart h7" x="660" y="-20">💓</text>
+    <text class="heart h8" x="750" y="-20">❤️</text>
+
+    <!-- Flowing bubbles -->
+    <g class="bubble">
+      <circle cx="75" cy="170" r="13">
+        <animate attributeName="cy" values="280;-20" dur="8s" repeatCount="indefinite"/>
+        <animate attributeName="cx" values="75;95;65;75" dur="8s" repeatCount="indefinite"/>
+        <animate attributeName="r" values="7;15;9;7" dur="8s" repeatCount="indefinite"/>
+      </circle>
+
+      <circle cx="190" cy="210" r="7">
+        <animate attributeName="cy" values="280;-20" dur="6s" begin="1s" repeatCount="indefinite"/>
+        <animate attributeName="cx" values="190;165;205;190" dur="6s" repeatCount="indefinite"/>
+      </circle>
+
+      <circle cx="300" cy="190" r="10">
+        <animate attributeName="cy" values="280;-20" dur="9s" begin="2s" repeatCount="indefinite"/>
+      </circle>
+
+      <circle cx="510" cy="225" r="12">
+        <animate attributeName="cy" values="280;-20" dur="7s" begin=".5s" repeatCount="indefinite"/>
+        <animate attributeName="cx" values="510;530;485;510" dur="7s" repeatCount="indefinite"/>
+      </circle>
+
+      <circle cx="640" cy="180" r="8">
+        <animate attributeName="cy" values="280;-20" dur="8s" begin="2s" repeatCount="indefinite"/>
+      </circle>
+
+      <circle cx="735" cy="215" r="14">
+        <animate attributeName="cy" values="280;-20" dur="9s" begin="1s" repeatCount="indefinite"/>
+        <animate attributeName="cx" values="735;710;750;735" dur="9s" repeatCount="indefinite"/>
+      </circle>
     </g>
-    <!-- Text group -->
-    <text x="120" y="87" class="animated-text"> 🔥 𝐑𝐄𝐃𝐓𝐄𝐂𝐇 𝐀𝐈</text>
-    <text x="120" y="99" class="sub-text">THE ULTIMATE WHATSAPP POWER-BOT</text>
+
+    <!-- Central neon panel -->
+    <rect x="22" y="28" width="756" height="204" rx="22"
+          fill="#08070b" stroke="url(#neon)" stroke-width="2.5" filter="url(#glow)"/>
+
+    <!-- Flame icon -->
+    <text x="110" y="120" text-anchor="middle" font-size="49" filter="url(#glow)">🔥</text>
+
+    <!-- Main logo -->
+    <text class="brand" x="435" y="119" text-anchor="middle">𝐑𝐄𝐃𝐓𝐄𝐂𝐇-𝐀𝐈</text>
+
+    <!-- Glowing divider -->
+    <line x1="95" y1="145" x2="705" y2="145" stroke="url(#neon)" stroke-width="2">
+      <animate attributeName="opacity" values=".4;1;.4" dur="2s" repeatCount="indefinite"/>
+    </line>
+
+    <!-- Centered tagline -->
+    <text class="tagline" x="400" y="176" text-anchor="middle">THE ULTIMATE WHATSAPP</text>
+    <text class="tagline" x="400" y="205" text-anchor="middle">POWER-BOT</text>
   </g>
 </svg>
+      
