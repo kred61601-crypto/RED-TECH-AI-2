@@ -1,663 +1,481 @@
+
 /**
- * KING RED AI SaaS
- * One WhatsApp connection per SaaS user.
- * CommonJS edition.
+ * botInstance — one WhatsApp connection per SaaS user.
+ *
+ * Extracts the connectionLogic from index.js and scopes all state
+ * (sock, latestQr, myJid, settings, jsonStore) to the instance.
+ * Message processing runs inside AsyncLocalStorage.run() so that
+ * getSettings() and jsonStore in commands transparently use this
+ * user's data without any code changes to command files.
  */
 
 const path = require("path");
 const fs = require("fs");
 const zlib = require("zlib");
 
-const baileys = require("@whiskeysockets/baileys");
-const makeWASocket = baileys.default;
-
-const {
-    DisconnectReason,
-    useMultiFileAuthState,
-    makeCacheableSignalKeyStore,
-    Browsers,
-    fetchLatestBaileysVersion
-} = baileys;
-
+const { DisconnectReason, useMultiFileAuthState, makeCacheableSignalKeyStore, Browsers, fetchLatestBaileysVersion } = require("@whiskeysockets/baileys");
+const makeWASocket = require("@whiskeysockets/baileys").default;
+const QRCode = require("qrcode");
 const NodeCache = require("node-cache");
 const P = require("pino");
 
 const { handleMessages } = require("../lib/commandHandler");
-const {
-    handleAutomation,
-    handleMessageDelete
-} = require("../lib/automation");
-
+const { handleAutomation, handleMessageDelete } = require("../lib/automation");
 const botContext = require("../lib/botContext");
 const { createUserStore } = require("../redtech/jsonStore");
 const SettingsManager = require("./settingsManager");
-
-const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
+const { version: botVersion } = require("../config");
 
 class BotInstance {
     constructor(userId, options = {}) {
-        if (!userId) {
-            throw new Error("A user ID is required.");
-        }
-
-        this.userId = String(userId);
-        this.sessionDir = path.join(
-            __dirname,
-            "../sessions",
-            this.userId
-        );
-
-        this.store = createUserStore(this.userId);
+        this.userId = userId;
+        this.sessionDir = path.join(__dirname, `../sessions/${userId}`);
+        this.store = createUserStore(userId);
         this.settingsManager = new SettingsManager(this.store);
 
-        // Connection state.
+        // Runtime state
         this.sock = null;
         this.latestQr = null;
         this.myJid = null;
         this.botStartTime = null;
-        this.status = "offline";
+        this.status = "offline"; // offline | connecting | online
         this.isReconnecting = false;
         this.stopped = false;
         this.consecutiveFailures = 0;
+        this.hasWipedSessionOnStartup = false;
 
-        // Timers.
-        this.reconnectTimer = null;
-        this.pairingTimer = null;
+        // Timers
         this.alwaysOnlineInterval = null;
         this.healthCheckInterval = null;
 
-        // Pairing state.
+        // Pairing
         this.pairingCodeResolve = null;
         this.pairingCodeReject = null;
         this.pairingRestartInProgress = false;
         this.pairingCodeRequested = false;
         this.pendingPairingNumber = null;
-
-        // Session state.
-        this.sessionId = options.sessionId || null;
+        this.sessionIdFailed = false;
         this.sessionIdInvalid = false;
         this.sessionInvalidated = false;
-        this.hasWipedSessionOnStartup = false;
         this.restoredFromDatabase = false;
 
-        // Optional channel metadata.
+        // Newsletter
         this.newsletterJid = "120363428521307680@newsletter";
-        this.newsletterName = "KING RED AI Updates";
-        this.newsletterInviteLink = "";
+        this.newsletterName = "Redtech Ai Updates";
+
+        // User's WhatsApp number (for pairing)
+        this.sessionId = options.sessionId || null;
     }
 
+    // ── Context runner ─────────────────────────────────────────────────────────
+
     _runInContext(fn) {
-        return botContext.run({
+        const ctx = {
             store: this.store,
             settingsCache: this.settingsManager.get(),
             settingsManager: this.settingsManager,
-            myJid: this.myJid
-        }, fn);
+            myJid: this.myJid,
+        };
+        return botContext.run(ctx, fn);
     }
+
+    // ── Start ──────────────────────────────────────────────────────────────────
 
     async start() {
-        if (this.isReconnecting || this.status === "online") {
-            return this;
-        }
-
         this.stopped = false;
         this.sessionInvalidated = false;
-
-        fs.mkdirSync(this.sessionDir, { recursive: true });
-
+        if (!fs.existsSync(this.sessionDir)) {
+            fs.mkdirSync(this.sessionDir, { recursive: true });
+        }
         await this.settingsManager.load();
         await this._connectionLogic();
-
-        return this;
     }
+
+    // ── Stop ───────────────────────────────────────────────────────────────────
 
     stop() {
         this.stopped = true;
+        this._clearTimers();
+        if (this.sock) {
+            try { this.sock.end(new Error("BotInstance stopped")); } catch (_) {}
+            this.sock = null;
+        }
         this.status = "offline";
         this.latestQr = null;
         this.myJid = null;
-        this.pairingRestartInProgress = false;
-
-        this._clearTimers();
-        this._rejectPendingPairing(
-            new Error("Bot connection was stopped.")
-        );
-
-        const socket = this.sock;
-        this.sock = null;
-
-        if (socket) {
-            try {
-                socket.end(new Error("KING RED AI stopped"));
-            } catch (_) {}
-        }
     }
 
-    _rejectPendingPairing(error) {
-        if (this.pairingCodeReject) {
-            this.pairingCodeReject(error);
-        }
-
-        this.pairingCodeResolve = null;
-        this.pairingCodeReject = null;
-    }
+    // ── Pairing trigger (called from API route) ────────────────────────────────
 
     triggerPairingRestart(phone) {
-        const number = String(phone || "").replace(/\D/g, "");
-
-        if (!/^\d{7,15}$/.test(number)) {
-            return Promise.reject(
-                new Error("Enter a valid international phone number.")
-            );
-        }
-
-        if (this.stopped) {
-            this.stopped = false;
-        }
-
-        this._rejectPendingPairing(
-            new Error("Pairing request replaced.")
-        );
-
-        this._clearTimers();
-        this.pendingPairingNumber = number;
-        this.pairingCodeRequested = false;
-        this.sessionId = null;
-        this.sessionIdInvalid = false;
-        this.sessionInvalidated = false;
-        this.pairingRestartInProgress = true;
-
-        this.wipeSession();
-
-        const oldSocket = this.sock;
-        this.sock = null;
-
-        if (oldSocket) {
-            try {
-                oldSocket.end(new Error("Restarting pairing"));
-            } catch (_) {}
-        }
-
-        const promise = new Promise((resolve, reject) => {
+        return new Promise((resolve, reject) => {
             this.pairingCodeResolve = resolve;
             this.pairingCodeReject = reject;
 
-            this.pairingTimer = setTimeout(() => {
-                if (this.pairingCodeReject === reject) {
+            const timer = setTimeout(() => {
+                if (this.pairingCodeResolve === resolve) {
                     this.pairingCodeResolve = null;
                     this.pairingCodeReject = null;
-                    this.pendingPairingNumber = null;
-                    this.pairingRestartInProgress = false;
-
-                    reject(
-                        new Error("Timed out waiting for a pairing code.")
-                    );
+                    reject(new Error("Timed out waiting for pairing code (25s)."));
                 }
-            }, 60000);
+            }, 25000);
+            if (timer.unref) timer.unref();
+
+            this.pendingPairingNumber = phone;
+            this.pairingCodeRequested = false;
+            this.sessionId = null;
+            this.sessionIdFailed = false;
+
+            // Wipe stale session
+            try {
+                if (fs.existsSync(this.sessionDir)) {
+                    fs.readdirSync(this.sessionDir).forEach(f => {
+                        try { fs.unlinkSync(path.join(this.sessionDir, f)); } catch (_) {}
+                    });
+                }
+            } catch (_) {}
+
+            this.pairingRestartInProgress = true;
+
+            if (this.sock) {
+                const oldSock = this.sock;
+                try { oldSock.end(new Error("Pairing restart")); } catch (_) {}
+                this.sock = null;
+            }
+
+            // The old socket may have emitted `close` before this method was
+            // called. Do not rely only on that event to restart pairing.
+            setTimeout(() => {
+                if (this.pairingRestartInProgress && !this.isReconnecting && !this.stopped) {
+                    this._connectionLogic();
+                }
+            }, 150);
         });
-
-        this.reconnectTimer = setTimeout(() => {
-            this.reconnectTimer = null;
-
-            this._connectionLogic().catch(error => {
-                this.isReconnecting = false;
-                this.status = "offline";
-                this._rejectPendingPairing(error);
-                console.error(
-                    `[${this.userId}] Pairing startup failed:`,
-                    error.message
-                );
-            });
-        }, 500);
-
-        return promise;
     }
 
     wipeSession() {
         try {
-            fs.mkdirSync(this.sessionDir, { recursive: true });
-
-            for (const file of fs.readdirSync(this.sessionDir)) {
-                const fullPath = path.join(this.sessionDir, file);
-
-                try {
-                    const stat = fs.lstatSync(fullPath);
-
-                    if (stat.isFile() || stat.isSymbolicLink()) {
-                        fs.unlinkSync(fullPath);
-                    } else if (stat.isDirectory()) {
-                        fs.rmSync(fullPath, {
-                            recursive: true,
-                            force: true
-                        });
-                    }
-                } catch (_) {}
+            if (fs.existsSync(this.sessionDir)) {
+                fs.readdirSync(this.sessionDir).forEach(f => {
+                    try { fs.unlinkSync(path.join(this.sessionDir, f)); } catch (_) {}
+                });
             }
-        } catch (error) {
-            console.error(
-                `[${this.userId}] Session cleanup failed:`,
-                error.message
-            );
+        } catch (e) {
+            console.error(`[${this.userId}] wipeSession error:`, e.message);
         }
     }
 
     getSessionId() {
         const credsPath = path.join(this.sessionDir, "creds.json");
-
-        if (!fs.existsSync(credsPath)) return null;
-
-        try {
-            const data = fs.readFileSync(credsPath, "utf8");
-
-            if (data.length < 10) return null;
-
-            return "KINGRED~" + Buffer.from(data).toString("base64");
-        } catch (_) {
-            return null;
-        }
-    }
-
-    restoreSessionId(sessionId) {
-        const raw = String(sessionId || "").trim();
-
-        if (!raw) {
-            throw new Error("Session ID is empty.");
-        }
-
-        const encoded = raw.includes("~")
-            ? raw.slice(raw.indexOf("~") + 1)
-            : raw;
-
-        let decoded = Buffer.from(encoded, "base64");
-
-        const decompress = buffer => {
-            for (const method of [
-                zlib.gunzipSync,
-                zlib.inflateSync,
-                zlib.inflateRawSync
-            ]) {
-                try {
-                    return method(buffer).toString("utf8");
-                } catch (_) {}
-            }
-
-            return buffer.toString("utf8");
-        };
-
-        let text = decompress(decoded);
-
-        // Support session IDs containing a second base64 layer.
-        if (!text.trim().startsWith("{")) {
-            const trimmed = text.trim();
-
-            if (/^[A-Za-z0-9+/=\r\n]+$/.test(trimmed)) {
-                try {
-                    decoded = Buffer.from(trimmed, "base64");
-                    text = decompress(decoded);
-                } catch (_) {}
-            }
-        }
-
-        let parsed;
-
-        try {
-            parsed = JSON.parse(text);
-        } catch (_) {
-            const start = text.indexOf("{");
-            const end = text.lastIndexOf("}");
-
-            if (start < 0 || end <= start) {
-                throw new Error("Session ID does not contain valid JSON.");
-            }
-
-            parsed = JSON.parse(text.slice(start, end + 1));
-        }
-
-        const creds = parsed.creds || parsed;
-
-        if (!creds || !creds.noiseKey) {
-            throw new Error("Session ID does not contain WhatsApp credentials.");
-        }
-
-        creds.registered = true;
-
-        fs.mkdirSync(this.sessionDir, { recursive: true });
-
-        fs.writeFileSync(
-            path.join(this.sessionDir, "creds.json"),
-            JSON.stringify(creds, null, 2),
-            { mode: 0o600 }
-        );
+        if (!fs.existsSync(credsPath) || fs.statSync(credsPath).size < 10) return null;
+        const creds = fs.readFileSync(credsPath, "utf-8");
+        return "FIREBOX~" + Buffer.from(creds).toString("base64");
     }
 
     waitForSessionState(timeoutMs = 15000) {
-        if (this.status === "online") {
-            return Promise.resolve("online");
-        }
-
-        if (this.sessionInvalidated) {
-            return Promise.resolve("invalid");
-        }
-
+        if (this.status === "online") return Promise.resolve("online");
+        if (this.sessionInvalidated) return Promise.resolve("invalid");
         return new Promise(resolve => {
             const started = Date.now();
-
             const check = () => {
-                if (this.status === "online") {
-                    return resolve("online");
-                }
-
-                if (this.sessionInvalidated) {
-                    return resolve("invalid");
-                }
-
-                if (Date.now() - started >= timeoutMs) {
-                    return resolve("timeout");
-                }
-
+                if (this.status === "online") return resolve("online");
+                if (this.sessionInvalidated || Date.now() - started >= timeoutMs) return resolve(this.sessionInvalidated ? "invalid" : "timeout");
                 setTimeout(check, 250);
             };
-
             check();
         });
     }
 
-    async _getAuthState() {
-        try {
-            const db = require("../redtech/db");
+    restoreSessionId(sessionId) {
+        const rawId = sessionId.trim();
+        const encoded = rawId.includes("~") ? rawId.split("~")[1] : rawId;
+        const buffer = Buffer.from(encoded, "base64");
 
-            if (
-                typeof db.initDb === "function" &&
-                typeof db.isOnline === "function"
-            ) {
-                await db.initDb();
-
-                if (db.isOnline()) {
-                    const dbAuth = require("../redtech/dbAuth");
-
-                    if (
-                        typeof dbAuth.useDatabaseAuthState === "function"
-                    ) {
-                        const auth = await dbAuth.useDatabaseAuthState(
-                            `saas_${this.userId}`
-                        );
-
-                        if (auth && auth.state && auth.saveCreds) {
-                            this.restoredFromDatabase =
-                                !!auth.state.creds.registered;
-
-                            return auth;
-                        }
-                    }
+        const decodeBuffer = (buf) => {
+            try { return zlib.gunzipSync(buf).toString("utf-8"); } catch (_) {
+                try { return zlib.inflateSync(buf).toString("utf-8"); } catch (_) {
+                    return buf.toString("utf-8");
                 }
             }
-        } catch (error) {
-            console.error(
-                `[${this.userId}] Database auth unavailable; using local session:`,
-                error.message
-            );
+        };
+
+        let credsJson = decodeBuffer(buffer);
+        if (!credsJson.includes("{") && /^[a-zA-Z0-9+/=]+$/.test(credsJson.trim())) {
+            credsJson = decodeBuffer(Buffer.from(credsJson.trim(), "base64"));
         }
 
-        this.restoredFromDatabase = false;
+        let finalJson = null;
+        for (let i = 0; i < credsJson.length; i++) {
+            if (credsJson[i] === "{") {
+                try {
+                    const candidate = credsJson.substring(i, credsJson.lastIndexOf("}") + 1);
+                    if (candidate.includes("noiseKey") || candidate.includes("creds")) {
+                        JSON.parse(candidate);
+                        finalJson = candidate;
+                        break;
+                    }
+                } catch (_) {}
+            }
+        }
 
-        return useMultiFileAuthState(this.sessionDir);
+        if (!finalJson) throw new Error("Could not find valid credentials in that Session ID.");
+
+        const parsed = JSON.parse(finalJson);
+        const creds = parsed.creds || (parsed.noiseKey ? parsed : null);
+        if (!creds) throw new Error("No credentials found inside Session ID.");
+
+        creds.registered = true;
+        if (!fs.existsSync(this.sessionDir)) fs.mkdirSync(this.sessionDir, { recursive: true });
+        fs.writeFileSync(path.join(this.sessionDir, "creds.json"), JSON.stringify(creds));
     }
 
-    async _connectionLogic() {
-        if (this.stopped || this.isReconnecting) return;
+    // ── Core connection logic ─────────────────────────────────────────────────
 
+    async _connectionLogic() {
+        if (this.stopped) return;
+        if (this.isReconnecting) return;
         this.isReconnecting = true;
         this.status = "connecting";
 
-        let socket = null;
-
-        try {
-            fs.mkdirSync(this.sessionDir, { recursive: true });
-
-            // Restore an explicitly supplied session ID if no local
-            // credentials are available.
-            if (this.sessionId && !this.sessionIdInvalid) {
-                const credsPath = path.join(
-                    this.sessionDir,
-                    "creds.json"
-                );
-
-                const hasCredentials =
-                    fs.existsSync(credsPath) &&
-                    fs.statSync(credsPath).size > 10;
-
-                if (!hasCredentials) {
-                    try {
-                        this.restoreSessionId(this.sessionId);
-                    } catch (error) {
-                        console.error(
-                            `[${this.userId}] Session restoration failed:`,
-                            error.message
-                        );
-                    }
-                }
-            }
-
-            let auth = await this._getAuthState();
-
-            if (this.stopped) {
-                this.isReconnecting = false;
-                return;
-            }
-
-            let { state, saveCreds } = auth;
-
-            // Remove stale local files for a fresh login.
-            if (
-                !this.hasWipedSessionOnStartup &&
-                !state.creds.registered &&
-                !this.sessionId &&
-                !this.restoredFromDatabase
-            ) {
-                this.hasWipedSessionOnStartup = true;
-
-                this.wipeSession();
-
-                auth = await useMultiFileAuthState(this.sessionDir);
-                state = auth.state;
-                saveCreds = auth.saveCreds;
-            }
-
-            const pairingMode =
-                !!this.pendingPairingNumber &&
-                !state.creds.registered;
-
-            const logger = P({ level: "silent" });
-            const retryCache = new NodeCache();
-
-            let version;
-
-            try {
-                const latest = await fetchLatestBaileysVersion();
-                version = latest.version;
-            } catch (_) {
-                version = undefined;
-            }
-
-            if (this.stopped) {
-                this.isReconnecting = false;
-                return;
-            }
-
-            socket = makeWASocket({
-                auth: {
-                    creds: state.creds,
-                    keys: makeCacheableSignalKeyStore(
-                        state.keys,
-                        logger
-                    )
-                },
-                logger,
-                ...(version ? { version } : {}),
-                browser: Browsers.ubuntu("Chrome"),
-                markOnlineOnConnect: true,
-                msgRetryCounterCache: retryCache,
-                defaultQueryTimeoutMs: 60000,
-                connectTimeoutMs: 60000,
-                keepAliveIntervalMs: 30000,
-                syncFullHistory: false,
-                shouldSyncHistoryMessage: () => false,
-
-                getMessage: async key => {
-                    try {
-                        const model = require("../redtech/messageModel");
-
-                        if (typeof model.getMessage === "function") {
-                            const message = await model.getMessage(key.id);
-                            return message?.content;
-                        }
-
-                        if (typeof model.get === "function") {
-                            const message = await model.get(key.id);
-                            return message?.content;
-                        }
-                    } catch (_) {}
-
-                    return undefined;
-                }
-            });
-
-            this.sock = socket;
-            socket.newsletterJid = this.newsletterJid;
-            socket.newsletterName = this.newsletterName;
-
-            socket.ev.on("creds.update", async (...args) => {
+        // SESSION_ID restore
+        if (this.sessionId && !this.sessionIdInvalid) {
+            const credsPath = path.join(this.sessionDir, "creds.json");
+            const sessionExists = fs.existsSync(credsPath) && fs.statSync(credsPath).size > 10;
+            if (!sessionExists) {
+                console.log(`[${this.userId}] Restoring session from SESSION_ID...`);
                 try {
-                    await saveCreds(...args);
-                } catch (error) {
-                    console.error(
-                        `[${this.userId}] Saving credentials failed:`,
-                        error.message
-                    );
+                    this.restoreSessionId(this.sessionId);
+                    console.log(`[${this.userId}] ✅ Session restored.`);
+                } catch (e) {
+                    console.error(`[${this.userId}] ❌ Session restore failed:`, e.message);
                 }
-            });
+            }
+        }
 
-            socket.ev.on("connection.update", async update => {
-                if (this.sock !== socket || this.stopped) return;
+        // Railway replaces containers during redeploys. Keep Baileys creds and
+        // signal keys in MongoDB whenever it is available, and retain the
+        // multi-file state only as a development/offline fallback.
+        let authState;
+        let usingDatabaseAuth = false;
+        try {
+            const { initDb, isOnline } = require("../firebox/db");
+            await initDb();
+            if (isOnline()) {
+                const { useDatabaseAuthState } = require("../firebox/dbAuth");
+                authState = await useDatabaseAuthState(`saas_${this.userId}`);
+                usingDatabaseAuth = true;
+                console.log(`[${this.userId}] Using MongoDB auth state.`);
+            }
+        } catch (error) {
+            console.error(`[${this.userId}] MongoDB auth state unavailable:`, error.message);
+        }
+        // stop() may have been called while database auth was loading. Do not
+        // let that in-flight restore create a second socket after a reset.
+        if (this.stopped) {
+            this.isReconnecting = false;
+            return;
+        }
+        if (!authState) authState = await useMultiFileAuthState(this.sessionDir);
+        let { state, saveCreds } = authState;
+        this.restoredFromDatabase = usingDatabaseAuth && !!state.creds.registered;
 
-                const { connection, lastDisconnect, qr } = update;
+        // Fresh login cleanup
+        if (!this.hasWipedSessionOnStartup && !state.creds.registered && !this.sessionId) {
+            this.hasWipedSessionOnStartup = true;
+            try {
+                if (fs.existsSync(this.sessionDir)) {
+                    fs.readdirSync(this.sessionDir).forEach(file => {
+                        try { fs.unlinkSync(path.join(this.sessionDir, file)); } catch (_) {}
+                    });
+                }
+                const freshState = await useMultiFileAuthState(this.sessionDir);
+                state = freshState.state;
+                saveCreds = freshState.saveCreds;
+            } catch (e) {
+                console.error(`[${this.userId}] ⚠️ Failed to clean session folder:`, e.message);
+            }
+        }
 
-                if (qr) {
-                    this.latestQr = qr;
+        const usePairingCode = !!this.pendingPairingNumber && !state.creds.registered;
+
+        const msgRetryCounterCache = new NodeCache();
+        const logger = P({ level: "silent" });
+
+        let version = [2, 3000, 1017531287];
+        try {
+            const { version: latestVer } = await fetchLatestBaileysVersion();
+            version = latestVer;
+        } catch (_) {}
+
+        const sock = makeWASocket({
+            auth: {
+                creds: state.creds,
+                keys: makeCacheableSignalKeyStore(state.keys, logger),
+            },
+            logger,
+            version,
+            markOnline: true,
+            browser: Browsers.ubuntu("Chrome"),
+            msgRetryCounterCache,
+            defaultQueryTimeoutMs: 60000,
+            syncFullHistory: false,
+            shouldSyncHistoryMessage: () => false,
+            linkPreviewHighQuality: false,
+            generateHighQualityLinkPreview: false,
+            connectTimeoutMs: 60000,
+            keepAliveIntervalMs: 30000,
+            getMessage: async (key) => {
+                try {
+                    const { getMessage: getMsg } = require("../firebox/messageModel");
+                    const msg = await getMsg(key.id);
+                    return msg ? msg.content : undefined;
+                } catch (_) { return undefined; }
+            }
+        });
+
+        this.sock = sock;
+        // Attach instance-level trackers to sock for commandHandler/automation
+        sock.myJid = this.myJid;
+        sock.stormTracker = {};
+        sock.presenceTracker = {};
+        sock.alwaysOnlineTracker = 0;
+        sock.spamTracker = {};
+        sock.newsletterJid = this.newsletterJid;
+        sock.newsletterName = this.newsletterName;
+
+        // Wrap sendMessage for "View Channel" label
+        const originalSendMessage = sock.sendMessage.bind(sock);
+        sock.sendMessage = async (jid, content, options = {}) => {
+            const settings = this.settingsManager.get();
+            if (!settings.hideViewChannel && this.newsletterJid) {
+                if (content && typeof content === "object" && !content.delete && !content.react) {
+                    if (!content.contextInfo) content.contextInfo = {};
+                    if (!content.contextInfo.forwardedNewsletterMessageInfo) {
+                        content.contextInfo.forwardingScore = 999;
+                        content.contextInfo.isForwarded = true;
+                        content.contextInfo.forwardedNewsletterMessageInfo = {
+                            newsletterJid: this.newsletterJid,
+                            newsletterName: this.newsletterName,
+                            serverMessageId: 1
+                        };
+                    }
+                }
+            }
+            return await originalSendMessage(jid, content, options);
+        };
+
+        // SESSION_ID watchdog
+        if (this.sessionId && !this.sessionIdInvalid) {
+            const wdTimer = setTimeout(() => {
+                if (!sock.user) {
+                    console.log(`[${this.userId}] ⚠️ Session ID failed to connect within 30s. Enabling QR fallback.`);
+                    this.sessionIdFailed = true;
+                }
+            }, 30000);
+            if (wdTimer.unref) wdTimer.unref();
+        }
+
+        sock.ev.on("creds.update", saveCreds);
+
+        sock.ev.on("connection.update", async (update) => {
+            const { connection, lastDisconnect, qr } = update;
+
+            if (qr) this.latestQr = qr;
+
+            // Trigger pairing code on the QR event — this is when WhatsApp signals
+            // the connection is ready, ensuring the code is cryptographically valid.
+            if (qr && usePairingCode && this.pendingPairingNumber && !this.pairingCodeRequested) {
+                this.pairingCodeRequested = true;
+                try {
+                    // WhatsApp may emit the first QR while the replacement socket is
+                    // still completing its handshake. Give the socket a short settle
+                    // window and reject stale-socket results after a restart.
+                    await new Promise(resolve => setTimeout(resolve, 1500));
+                    if (this.sock !== sock || !this.pendingPairingNumber) throw new Error("Pairing socket was replaced; retry the request.");
+                    const pNum = this.pendingPairingNumber.replace(/[^0-9]/g, "");
+                    if (!/^\d{7,15}$/.test(pNum)) throw new Error("Invalid phone number for WhatsApp pairing.");
+                    const code = await sock.requestPairingCode(pNum);
+                    console.log(`[${this.userId}] 🔗 Pairing code: ${code}`);
+                    if (this.pairingCodeResolve) {
+                        this.pairingCodeResolve(code);
+                        this.pairingCodeResolve = null;
+                        this.pairingCodeReject = null;
+                    }
+                    this.pendingPairingNumber = null;
+                } catch (err) {
+                    console.error(`[${this.userId}] ❌ Pairing code error:`, err.message);
+                    if (this.pairingCodeReject) {
+                        this.pairingCodeReject(err);
+                        this.pairingCodeResolve = null;
+                        this.pairingCodeReject = null;
+                    }
+                    this.pairingCodeRequested = false;
+                }
+            }
+
+            if (qr && (!this.sessionId || this.sessionIdFailed) && !usePairingCode) {
+                console.log(`[${this.userId}] 📱 QR code available`);
+            }
+
+            if (connection === "open") {
+                this.latestQr = null;
+                this.isReconnecting = false;
+                this.consecutiveFailures = 0;
+                this.status = "online";
+                this.botStartTime = Math.floor(Date.now() / 1000);
+                console.log(`[${this.userId}] ✅ Bot connected!`);
+
+                // Init DB
+                try {
+                    const { initDb } = require("../redtech/db");
+                    await initDb();
+                } catch (_) {}
+
+                // Load settings
+                await this._runInContext(async () => {
+                    await this.settingsManager.load();
+                });
+
+                const settings = this.settingsManager.get();
+
+                if (settings.alwaysOnline) {
+                    await sock.sendPresenceUpdate("available").catch(() => {});
                 }
 
-                // Request a phone pairing code once the socket has
-                // initialized and the account is not already registered.
-                if (
-                    pairingMode &&
-                    this.pendingPairingNumber &&
-                    !this.pairingCodeRequested &&
-                    (connection === "connecting" || !!qr)
-                ) {
-                    this.pairingCodeRequested = true;
+                if (this.alwaysOnlineInterval) clearInterval(this.alwaysOnlineInterval);
+                this.alwaysOnlineInterval = setInterval(async () => {
+                    const s = this.settingsManager.get();
+                    if (s.alwaysOnline) await sock.sendPresenceUpdate("available").catch(() => {});
+                }, 15000);
 
+                // Resolve newsletter JID
+                try {
+                    const metadata = await sock.newsletterMetadata("invite", "0029Vb8elJp77qVJlCeiNX26").catch(() => null);
+                    if (metadata && metadata.id) {
+                        this.newsletterJid = metadata.id;
+                        this.newsletterName = metadata.subject || "Redtech Ai Updates";
+                        sock.newsletterJid = this.newsletterJid;
+                        sock.newsletterName = this.newsletterName;
+                    }
+                } catch (_) {}
+
+                // Set myJid
+                const myJid = (sock.user && sock.user.id) || "";
+                const cleanJid = myJid.split(":")[0];
+                const domain = myJid.includes("@lid") ? "@lid" : "@s.whatsapp.net";
+                this.myJid = cleanJid ? cleanJid + domain : "";
+                sock.myJid = this.myJid;
+                console.log(`[${this.userId}] 📊 Connected as ${this.myJid}`);
+
+                // Health watchdog
+                if (this.healthCheckInterval) clearInterval(this.healthCheckInterval);
+                this.healthCheckInterval = setInterval(async () => {
                     try {
-                        await sleep(1200);
-
-                        if (
-                            this.sock !== socket ||
-                            this.stopped ||
-                            !this.pendingPairingNumber
-                        ) {
-                            return;
-                        }
-
-                        const number = this.pendingPairingNumber;
-
-                        const code = await socket.requestPairingCode(number);
-
-                        if (this.pairingCodeResolve) {
-                            this.pairingCodeResolve(code);
-                            this.pairingCodeResolve = null;
-                            this.pairingCodeReject = null;
-
-                            if (this.pairingTimer) {
-                                clearTimeout(this.pairingTimer);
-                                this.pairingTimer = null;
-                            }
-                        }
-
-                        this.pendingPairingNumber = null;
-                    } catch (error) {
-                        this.pairingCodeRequested = false;
-
-                        this._rejectPendingPairing(
-                            new Error(
-                                `Pairing code request failed: ${error.message}`
-                            )
+                        const wsOpen = sock && sock.ws && (
+                            sock.ws.isOpen === true ||
+                            sock.ws.readyState === 1 ||
+                            (sock.ws.socket && sock.ws.socket.readyState === 1)
                         );
-
-                        console.error(
-                            `[${this.userId}] Pairing code request failed:`,
-                            error.message
-                        );
-                    }
-                }
-
-                if (connection === "connecting") {
-                    this.status = "connecting";
-                }
-
-                if (connection === "open") {
-                    this.status = "online";
-                    this.isReconnecting = false;
-                    this.consecutiveFailures = 0;
-                    this.latestQr = null;
-                    this.myJid = socket.user?.id || null;
-                    this.botStartTime = Date.now();
-                    this.sessionId = null;
-                    this.sessionInvalidated = false;
-                    this.pairingRestartInProgress = false;
-
-                    console.log(
-                        `[${this.userId}] KING RED AI connected: ${this.myJid || "WhatsApp"}`
-                    );
-
-                    this._startTimers();
-                    return;
-                }
-
-                if (connection === "close") {
-                    if (this.sock !== socket) return;
-
-                    this.sock = null;
-                    this.myJid = null;
-                    this.latestQr = null;
-                    this._clearRuntimeTimers();
-
-                    const statusCode =
-                        lastDisconnect?.error?.output?.statusCode;
-
-                    const loggedOut =
-                        statusCode === DisconnectReason.loggedOut;
-
-                    if (loggedOut) {
-                        this.status = "offline";
-                        this.sessionInvalidated = true;
-                        this.sessionIdInvalid = true;
-
-                        this._rejectPendingPairing(
-                            new Error(
-                                "WhatsApp logged out. Request a new pairing code."
-                            )
-                        );
-
-                        console.error(
-                            `[${this.userId}] WhatsApp session logged out.`
-                        );
-
-                        return;
-                    }
-
-                    if (this.stopped) {
-                        this.status = "offline";
-                        return;
-                    }
-
-                    this.status = "reconnecting";
-         
+                        if (wsOpen) {
+                            await Promise.race([
+                                sock.fetchBlocklist().catch((
