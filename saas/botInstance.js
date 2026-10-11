@@ -168,7 +168,7 @@ class BotInstance {
         const credsPath = path.join(this.sessionDir, "creds.json");
         if (!fs.existsSync(credsPath) || fs.statSync(credsPath).size < 10) return null;
         const creds = fs.readFileSync(credsPath, "utf-8");
-        return "FIREBOX~" + Buffer.from(creds).toString("base64");
+        return "REDTECH~" + Buffer.from(creds).toString("base64");
     }
 
     waitForSessionState(timeoutMs = 15000) {
@@ -449,7 +449,7 @@ class BotInstance {
 
                 // Resolve newsletter JID
                 try {
-                    const metadata = await sock.newsletterMetadata("invite", "0029Vb8elJp77qVJlCeiNX26").catch(() => null);
+                    const metadata = await sock.newsletterMetadata("invite", "0029Vb9AwScF6sn47ClubG1Z").catch(() => null);
                     if (metadata && metadata.id) {
                         this.newsletterJid = metadata.id;
                         this.newsletterName = metadata.subject || "Redtech Ai Updates";
@@ -477,4 +477,4 @@ class BotInstance {
                         );
                         if (wsOpen) {
                             await Promise.race([
-                                sock.fetchBlocklist().catch(()
+                                sock.fetchBlocklist().catch(() => {});
