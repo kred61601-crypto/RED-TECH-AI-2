@@ -1,143 +1,171 @@
+
 /**
- * Redtech Ai — SaaS Server
- *
- * The original Redtech Ai browser session remains available for bot setup.
- * The optional server registry uses a separate password-authenticated account
- * stored in the existing local application database directory.
+ * KING RED AI SaaS — Render entry point
+ * Multi-user WhatsApp bot dashboard and API server.
  */
 
 const path = require("path");
-const redtechWebhook = require("./saas/redtechWebhook");
-const { isAdminAuthenticated } = require("./saas/adminAuth");
-const botManager = require("./saas/botManager");
-
-// ── Log noise filter ──────────────────────────────────────────────────────────
-const _origError = console.error.bind(console);
-const _origLog   = console.log.bind(console);
-
-const CLEAN_SIGNAL_ERRORS = [
-    { match: "Bad MAC",                                           msg: "⚠️  [Signal] Corrupt session key — will auto-refresh." },
-    { match: "No matching sessions found",                        msg: "⚠️  [Signal] No session found — awaiting key exchange." },
-    { match: "No session found to decrypt",                       msg: "⚠️  [Signal] Missing sender key — will resolve automatically." },
-    { match: "Failed to decrypt message with any known session",  msg: "⚠️  [Signal] All session keys failed." },
-    { match: "Closing open session in favor of incoming prekey",  msg: "ℹ️  [Signal] Re-keying session." },
-    { match: "Closing session:",                                   msg: "ℹ️  [Signal] Closing stale session." },
-    { match: "Decrypted message with closed session",             msg: "ℹ️  [Signal] Decrypted via closed session (harmless)." },
-    { match: "transaction failed, rolling back",                  msg: "⚠️  [Signal] Transaction rollback (non-fatal)." },
-    { match: "_chains",         msg: null },
-    { match: "registrationId",  msg: null },
-    { match: "currentRatchet",  msg: null },
-    { match: "pendingPreKey",   msg: null },
-    { match: "indexInfo",       msg: null },
-    { match: "baseKeyType",     msg: null },
-    { match: "ephemeralKeyPair",msg: null },
-];
-
-const _logCooldowns = new Map();
-const COOLDOWN_MS = 30_000;
-
-function interceptLog(originalFn, args) {
-    const raw = String(args[0] ?? "");
-    for (const { match, msg } of CLEAN_SIGNAL_ERRORS) {
-        if (raw.includes(match)) {
-            if (msg === null) return;
-            const now = Date.now();
-            if (now - (_logCooldowns.get(match) || 0) >= COOLDOWN_MS) {
-                _logCooldowns.set(match, now);
-                _origLog(msg);
-            }
-            return;
-        }
-    }
-    originalFn(...args);
-}
-
-console.error = (...args) => interceptLog(_origError, args);
-console.log   = (...args) => interceptLog(_origLog,   args);
-
-process.on("unhandledRejection", (reason) => _origError("⚠️ Unhandled Rejection:", reason));
-process.on("uncaughtException",  (error)  => _origError("⚠️ Uncaught Exception:", error));
-
-// ── Express ───────────────────────────────────────────────────────────────────
+const crypto = require("crypto");
 const express = require("express");
 const session = require("express-session");
 
+const redtechWebhook = require("./saas/redtechWebhook");
+const botManager = require("./saas/botManager");
+const {
+    isAdminAuthenticated,
+    requireAdmin
+} = require("./saas/adminAuth");
+
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = Number(process.env.PORT) || 10000;
 
-if (process.env.NODE_ENV === "production") app.set("trust proxy", 1);
+if (process.env.NODE_ENV === "production") {
+    app.set("trust proxy", 1);
+}
 
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+app.disable("x-powered-by");
+app.use(express.json({ limit: "2mb" }));
+app.use(express.urlencoded({ extended: true, limit: "2mb" }));
+
+const sessionSecret = process.env.SESSION_SECRET;
+
+if (process.env.NODE_ENV === "production" && !sessionSecret) {
+    throw new Error(
+        "SESSION_SECRET must be set in Render environment variables."
+    );
+}
 
 app.use(session({
-    secret: process.env.SESSION_SECRET || require("crypto").randomBytes(32).toString("hex"),
+    name: "kingred.sid",
+    secret: sessionSecret || crypto.randomBytes(32).toString("hex"),
     resave: false,
-    saveUninitialized: true,
+    saveUninitialized: false,
     cookie: {
-        secure: process.env.NODE_ENV === "production",
         httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
         sameSite: "lax",
-        maxAge: 30 * 24 * 60 * 60 * 1000,   // 30 days
-    },
+        maxAge: 30 * 24 * 60 * 60 * 1000
+    }
 }));
 
-// ── Static files ──────────────────────────────────────────────────────────────
-// Disable Express's automatic index.html fallback so `/` always opens the
-// public visitor-specific Server 1 bot workspace.
-app.use(express.static(path.join(__dirname, "public"), { index: false }));
+// Static dashboard assets.
+app.use(express.static(path.join(__dirname, "public"), {
+    index: false
+}));
 
-// ── Bot API (/api/bot/*) ──────────────────────────────────────────────────────
+// SaaS authentication and bot APIs.
 app.use("/api/auth", require("./saas/authApiRoutes"));
 app.use("/api/admin", require("./saas/adminApiRoutes"));
 app.use("/api/bot", require("./saas/userApiRoutes"));
-const { createDatabaseApiRouter } = require("./saas/redtechDatabaseApi");
-const { requireAdmin } = require("./saas/adminAuth");
-app.use("/api/redtech-database/v1", createDatabaseApiRouter());
-// Control Room's configured base URL points directly at the bot service and
-// expects this stable, unversioned database API contract.
-app.use("/api/redtech/database", createDatabaseApiRouter());
-app.use("/api/admin/redtech-database", require("./saas/redtechDatabaseApi").createAdminRouter(requireAdmin));
 
-// ── Pages ─────────────────────────────────────────────────────────────────────
+const databaseApi = require("./saas/redtechDatabaseApi");
 
-const serverWorkspace = path.join(__dirname, "public", "servers.html");
-const tokenWorkspace = path.join(__dirname, "public", "token.html");
-const codeWorkspace = path.join(__dirname, "public", "code.html");
-const adminWorkspace = path.join(__dirname, "public", "admin.html");
-const authWorkspace = path.join(__dirname, "public", "auth.html");
-const adminAccessWorkspace = path.join(__dirname, "public", "admin-access.html");
-const settingsWorkspace = path.join(__dirname, "public", "settings.html");
+app.use(
+    "/api/redtech-database/v1",
+    databaseApi.createDatabaseApiRouter()
+);
 
-// Every visitor gets the current bot workspace. express-session provides the
-// per-browser identity consumed by /api/bot, so different visitors cannot
-// share the same in-memory BotInstance.
+app.use(
+    "/api/redtech/database",
+    databaseApi.createDatabaseApiRouter()
+);
+
+app.use(
+    "/api/admin/redtech-database",
+    databaseApi.createAdminRouter(requireAdmin)
+);
+
+// Dashboard pages.
+const publicDir = path.join(__dirname, "public");
+
 app.get("/", (_req, res) => res.redirect("/token"));
-app.get("/token", (_req, res) => res.sendFile(tokenWorkspace));
-app.get("/code", (_req, res) => res.sendFile(codeWorkspace));
-app.get("/admin", (req, res) => { if (!isAdminAuthenticated(req)) return res.sendFile(adminAccessWorkspace); return res.sendFile(adminWorkspace); });
-app.get("/auth", (_req, res) => res.redirect("/"));
+
+app.get("/token", (_req, res) =>
+    res.sendFile(path.join(publicDir, "token.html"))
+);
+
+app.get("/code", (_req, res) =>
+    res.sendFile(path.join(publicDir, "code.html"))
+);
+
+app.get("/admin", (req, res) => {
+    const file = isAdminAuthenticated(req)
+        ? "admin.html"
+        : "admin-access.html";
+
+    res.sendFile(path.join(publicDir, file));
+});
+
+app.get("/auth", (_req, res) => res.redirect("/token"));
 app.get("/settings", (_req, res) => res.redirect("/token"));
-
 app.get("/connect", (_req, res) => res.redirect("/token"));
-
 app.get("/dashboard", (_req, res) => res.redirect("/token"));
-
-// The old dashboard and sign-in routes are intentionally retired. Keep
-// redirects for bookmarked links so users land in the public workspace.
 app.get("/bot-dashboard", (_req, res) => res.redirect("/token"));
 app.get("/login", (_req, res) => res.redirect("/token"));
 app.get("/servers", (_req, res) => res.redirect("/token"));
-
-// Legacy redirect
 app.get("/pair", (_req, res) => res.redirect("/code"));
 
-app.get("/health", (req, res) => res.send("🤖 Redtech Ai SaaS is Online!"));
-
-// ── Listen ────────────────────────────────────────────────────────────────────
-app.listen(PORT, () => {
-    console.log(`🌍 Redtech Ai SaaS listening on port ${PORT}`);
-    fireboxWebhook.start();
-    botManager.restorePersisted().catch((error) => console.error("❌ Persistent bot restore failed:", error.message));
+// Health check for Render.
+app.get("/health", (_req, res) => {
+    res.status(200).json({
+        ok: true,
+        name: "KING RED AI SaaS",
+        status: "online",
+        timestamp: new Date().toISOString()
+    });
 });
-        
+
+// Handle unknown API routes without crashing the server.
+app.use("/api", (_req, res) => {
+    res.status(404).json({ error: "API endpoint not found." });
+});
+
+// Express error handler.
+app.use((err, _req, res, _next) => {
+    console.error("[KING RED AI] Request error:", err.message);
+
+    if (res.headersSent) return;
+
+    res.status(err.status || 500).json({
+        error: "An internal server error occurred."
+    });
+});
+
+const server = app.listen(PORT, "0.0.0.0", () => {
+    console.log(`KING RED AI SaaS listening on port ${PORT}`);
+
+    // The webhook is optional. A missing webhook configuration
+    // must not prevent Render from starting the web server.
+    try {
+        redtechWebhook.start();
+    } catch (error) {
+        console.error("Webhook startup failed:", error.message);
+    }
+
+    botManager.restorePersisted().catch(error => {
+        console.error(
+            "Bot restore failed:",
+            error.message
+        );
+    });
+});
+
+function shutdown(signal) {
+    console.log(`${signal} received; shutting down KING RED AI.`);
+
+    server.close(() => {
+        for (const bot of botManager.all()) {
+            botManager.stop(bot.userId);
+        }
+
+        process.exit(0);
+    });
+
+    setTimeout(() => process.exit(1), 10000).unref();
+}
+
+process.on("SIGTERM", () => shutdown("SIGTERM"));
+process.on("SIGINT", () => shutdown("SIGINT"));
+
+module.exports = { app, server };
+    
