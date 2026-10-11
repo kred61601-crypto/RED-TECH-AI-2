@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>REDTECH - WhatsApp Bot Automation & Digital Services Platform</title>
+    <meta name="description" content="REDTECH: Premium SaaS platform for WhatsApp bots, social media automation, VPS hosting, and digital services.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+    <!-- Navigation -->
+    <header class="topbar">
+        <div class="container nav">
+            <div class="brand">
+                <span class="brand-mark">R</span>
+                <span class="brand-text">REDTECH</span>
+            </div>
+            <nav class="menu">
+                <a href="#features">Features</a>
+                <a href="#services">Services</a>
+                <a href="#pricing">Pricing</a>
+                <a href="#faq">FAQ</a>
+            </nav>
+            <div class="nav-actions">
+                <button class="btn btn-light" id="navLogin">Login</button>
+                <button class="btn btn-primary" id="navSignup">Get Started</button>
+            </div>
+        </div>
+    </header>
+
+    <main>
+        <!-- Hero Section -->
+        <section class="hero">
+            <div class="container hero-content">
+                <div class="hero-text">
+                    <span class="badge">🚀 Automate Your Business</span>
+                    <h1>WhatsApp Bots & Automation Made Simple</h1>
+                    <p>Build, deploy, and scale WhatsApp bots, manage social media growth, host secure VPS, and access premium digital tools—all from one powerful dashboard.</p>
+                    <div class="hero-actions">
+                        <button class="btn btn-primary btn-large">Start Free Trial</button>
+                        <button class="btn btn-light btn-large">Watch Demo</button>
+                    </div>
+                    <div class="hero-stats">
+                        <div><strong>10,000+</strong> <span>Active Users</span></div>
+                        <div><strong>99.9%</strong> <span>Uptime</span></div>
+                        <div><strong>24/7</strong> <span>Support</span></div>
+                    </div>
+                </div>
+                <div class="hero-visual">
+                    <div class="dashboard-preview">
+                        <div class="preview-header">
+                            <span class="dot green"></span>
+                            <span class="dot yellow"></span>
+                            <span class="dot red"></span>
+                        </div>
+                        <div class="preview-body">
+                            <div class="stat-card">
+                                <small>Total Balance</small>
+                                <h3>$12,450.50</h3>
+                            </div>
+                            <div class="mini-grid">
+                                <div><small>Active Bots</small><strong>24</strong></div>
+                                <div><small>Messages</small><strong>14.2K</strong></div>
+                                <div><small>Campaigns</small><strong>8</strong></div>
+                                <div><small>Uptime</small><strong>99.9%</strong></div>
+                            </div>
+                            <div class="chart">
+                                <div class="bar" style="height: 40%"></div>
+                                <div class="bar" style="height: 65%"></div>
+                                <div class="bar" style="height: 85%"></div>
+                                <div class="bar" style="height: 100%"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Features Section -->
+        <section id="features" class="section features">
+            <div class="container">
+                <div class="section-header">
+                    <span class="badge">✨ Why Choose REDTECH</span>
+                    <h2>Everything You Need to Succeed</h2>
+                </div>
+                <div class="features-grid">
+                    <div class="feature-box">
+                        <div class="icon">⚡</div>
+                        <h3>Lightning Fast</h3>
+                        <p>Deploy bots in seconds with our intuitive builder. No coding required.</p>
+                    </div>
+                    <div class="feature-box">
+                        <div class="icon">🔐</div>
+                        <h3>Bank-Level Security</h3>
+                        <p>Enterprise-grade encryption and compliance with international standards.</p>
+                    </div>
+                    <div class="feature-box">
+                        <div class="icon">📊</div>
+                        <h3>Advanced Analytics</h3>
+                        <p>Real-time insights into bot performance, user engagement, and ROI.</p>
+                    </div>
+                    <div class="feature-box">
+                        <div class="icon">🤖</div>
+                        <h3>AI-Powered</h3>
+                        <p>Integrated OpenAI for intelligent, human-like conversations.</p>
+                    </div>
+                    <div class="feature-box">
+                        <div class="icon">🌐</div>
+                        <h3>Global Reach</h3>
+                        <p>Support for 150+ countries with multi-language capabilities.</p>
+                    </div>
+                    <div class="feature-box">
+                        <div class="icon">💬</div>
+                        <h3>24/7 Support</h3>
+                        <p>Expert support team ready to help you succeed anytime.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Services Section -->
+        <section id="services" class="section services alt-bg">
+            <div class="container">
+                <div class="section-header">
+                    <span class="badge">📦 Our Services</span>
+                    <h2>Complete Digital Solutions</h2>
+                </div>
+                <div class="services-grid" id="servicesGrid"></div>
+            </div>
+        </section>
+
+        <!-- Pricing Section -->
+        <section id="pricing" class="section pricing">
+            <div class="container">
+                <div class="section-header">
+                    <span class="badge">💰 Simple Pricing</span>
+                    <h2>Plans for Every Business</h2>
+                </div>
+                <div class="pricing-grid">
+                    <div class="price-card">
+                        <h3>Starter</h3>
+                        <div class="price">$9<span>/mo</span></div>
+                        <p>Perfect for getting started</p>
+                        <ul>
+                            <li>✓ 1 WhatsApp Bot</li>
+                            <li>✓ Basic Analytics</li>
+                            <li>✓ Email Support</li>
+                            <li>✗ AI Features</li>
+                        </ul>
+                        <button class="btn btn-light full">Choose Plan</button>
+                    </div>
+                    <div class="price-card featured">
+                        <div class="badge-popular">Most Popular</div>
+                        <h3>Professional</h3>
+                        <div class="price">$29<span>/mo</span></div>
+                        <p>Best for growing teams</p>
+                        <ul>
+                            <li>✓ Unlimited Bots</li>
+                            <li>✓ Advanced Analytics</li>
+                            <li>✓ AI Features Included</li>
+                            <li>✓ Priority Support</li>
+                        </ul>
+                        <button class="btn btn-primary full">Start Free Trial</button>
+                    </div>
+                    <div class="price-card">
+                        <h3>Enterprise</h3>
+                        <div class="price">Custom</div>
+                        <p>For large-scale operations</p>
+                        <ul>
+                            <li>✓ Unlimited Everything</li>
+                            <li>✓ Dedicated VPS</li>
+                            <li>✓ Custom Integrations</li>
+                            <li>✓ Dedicated Manager</li>
+                        </ul>
+                        <button class="btn btn-light full">Contact Sales</button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- CTA Section -->
+        <section class="cta">
+            <div class="container cta-content">
+                <h2>Ready to Transform Your Business?</h2>
+                <p>Join thousands of successful businesses using REDTECH</p>
+                <button class="btn btn-primary btn-large">Start Your Free Trial Today</button>
+            </div>
+        </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container footer-grid">
+            <div>
+                <div class="brand">
+                    <span class="brand-mark">R</span>
+                    <span class="brand-text">REDTECH</span>
+                </div>
+                <p>The complete platform for WhatsApp bot automation and digital services.</p>
+            </div>
+            <div>
+                <h4>Product</h4>
+                <ul>
+                    <li><a href="#">Features</a></li>
+                    <li><a href="#">Pricing</a></li>
+                    <li><a href="#">Security</a></li>
+                </ul>
+            </div>
+            <div>
+                <h4>Company</h4>
+                <ul>
+                    <li><a href="#">About</a></li>
+                    <li><a href="#">Blog</a></li>
+                    <li><a href="#">Contact</a></li>
+                </ul>
+            </div>
+            <div>
+                <h4>Legal</h4>
+                <ul>
+                    <li><a href="#">Terms</a></li>
+                    <li><a href="#">Privacy</a></li>
+                    <li><a href="#">Cookies</a></li>
+                </ul>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>&copy; 2026 REDTECH Studios. All rights reserved. 🚀</p>
+        </div>
+    </footer>
+
+    <!-- Auth Modal -->
+    <div class="modal" id="authModal">
+        <div class="modal-card">
+            <button class="modal-close" id="closeModal">&times;</button>
+            <div class="modal-content" id="modalContent"></div>
+        </div>
+    </div>
+
+    <script src="/app.js"></script>
+</body>
+</html>

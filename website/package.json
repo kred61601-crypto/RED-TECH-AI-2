@@ -1,0 +1,32 @@
+{
+  "name": "redtech-saas",
+  "version": "2.0.0",
+  "description": "REDTECH - Premium SaaS Platform for WhatsApp Bots, Automation & Digital Services",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "nodemon server.js",
+    "build": "echo Building..."
+  },
+  "keywords": ["redtech", "whatsapp", "bot", "automation", "saas"],
+  "author": "REDTECH Studios",
+  "license": "ISC",
+  "dependencies": {
+    "express": "^5.2.1",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "mongoose": "^9.9.1",
+    "bcryptjs": "^3.0.3",
+    "jsonwebtoken": "^9.1.0",
+    "stripe": "^14.0.0",
+    "openai": "^4.28.0",
+    "axios": "^1.19.0",
+    "helmet": "^7.0.0",
+    "express-rate-limit": "^7.0.0",
+    "express-session": "^1.19.0",
+    "redis": "^4.6.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.14"
+  }
+}
