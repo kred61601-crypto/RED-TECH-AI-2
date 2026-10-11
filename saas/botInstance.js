@@ -1,4 +1,3 @@
-
 /**
  * botInstance — one WhatsApp connection per SaaS user.
  *
@@ -478,4 +477,4 @@ class BotInstance {
                         );
                         if (wsOpen) {
                             await Promise.race([
-                                sock.fetchBlocklist().catch((
+                                sock.fetchBlocklist().catch(()
