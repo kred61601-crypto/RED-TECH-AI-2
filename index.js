@@ -1,7 +1,9 @@
 
+"use strict";
+
 /**
- * KING RED AI SaaS — Render entry point
- * Multi-user WhatsApp bot dashboard and API server.
+ * KING RED AI SaaS
+ * Multi-user WhatsApp bot server for Render.
  */
 
 const path = require("path");
@@ -19,6 +21,42 @@ const {
 const app = express();
 const PORT = Number(process.env.PORT) || 10000;
 
+// Reduce unnecessary Baileys Signal log noise.
+const originalError = console.error.bind(console);
+const originalLog = console.log.bind(console);
+
+const signalMessages = [
+    ["Bad MAC", "Signal key refresh requested."],
+    ["No matching sessions found", "Waiting for Signal key exchange."],
+    ["No session found to decrypt", "Waiting for sender session."],
+    ["Failed to decrypt message with any known session", "Message could not be decrypted."],
+    ["Closing open session in favor of incoming prekey", "Refreshing Signal session."]
+];
+
+function filterSignalLog(original, args) {
+    const first = String(args[0] ?? "");
+
+    for (const [match, replacement] of signalMessages) {
+        if (first.includes(match)) {
+            original(`[KING RED AI] ${replacement}`);
+            return;
+        }
+    }
+
+    original(...args);
+}
+
+console.error = (...args) => filterSignalLog(originalError, args);
+console.log = (...args) => filterSignalLog(originalLog, args);
+
+process.on("unhandledRejection", reason => {
+    originalError("[KING RED AI] Unhandled rejection:", reason);
+});
+
+process.on("uncaughtException", error => {
+    originalError("[KING RED AI] Uncaught exception:", error);
+});
+
 if (process.env.NODE_ENV === "production") {
     app.set("trust proxy", 1);
 }
@@ -31,7 +69,7 @@ const sessionSecret = process.env.SESSION_SECRET;
 
 if (process.env.NODE_ENV === "production" && !sessionSecret) {
     throw new Error(
-        "SESSION_SECRET must be set in Render environment variables."
+        "Missing SESSION_SECRET. Add it in Render Environment."
     );
 }
 
@@ -48,12 +86,12 @@ app.use(session({
     }
 }));
 
-// Static dashboard assets.
-app.use(express.static(path.join(__dirname, "public"), {
-    index: false
-}));
+// Public dashboard assets.
+const publicDir = path.join(__dirname, "public");
 
-// SaaS authentication and bot APIs.
+app.use(express.static(publicDir, { index: false }));
+
+// SaaS APIs. Keep the existing route modules.
 app.use("/api/auth", require("./saas/authApiRoutes"));
 app.use("/api/admin", require("./saas/adminApiRoutes"));
 app.use("/api/bot", require("./saas/userApiRoutes"));
@@ -76,17 +114,15 @@ app.use(
 );
 
 // Dashboard pages.
-const publicDir = path.join(__dirname, "public");
-
 app.get("/", (_req, res) => res.redirect("/token"));
 
-app.get("/token", (_req, res) =>
-    res.sendFile(path.join(publicDir, "token.html"))
-);
+app.get("/token", (_req, res) => {
+    res.sendFile(path.join(publicDir, "token.html"));
+});
 
-app.get("/code", (_req, res) =>
-    res.sendFile(path.join(publicDir, "code.html"))
-);
+app.get("/code", (_req, res) => {
+    res.sendFile(path.join(publicDir, "code.html"));
+});
 
 app.get("/admin", (req, res) => {
     const file = isAdminAuthenticated(req)
@@ -115,14 +151,16 @@ app.get("/health", (_req, res) => {
     });
 });
 
-// Handle unknown API routes without crashing the server.
+// Unknown API endpoint.
 app.use("/api", (_req, res) => {
-    res.status(404).json({ error: "API endpoint not found." });
+    res.status(404).json({
+        error: "API endpoint not found."
+    });
 });
 
-// Express error handler.
+// Central error handler.
 app.use((err, _req, res, _next) => {
-    console.error("[KING RED AI] Request error:", err.message);
+    originalError("[KING RED AI] Request error:", err);
 
     if (res.headersSent) return;
 
@@ -132,26 +170,40 @@ app.use((err, _req, res, _next) => {
 });
 
 const server = app.listen(PORT, "0.0.0.0", () => {
-    console.log(`KING RED AI SaaS listening on port ${PORT}`);
+    originalLog(
+        `KING RED AI SaaS listening on port ${PORT}`
+    );
 
-    // The webhook is optional. A missing webhook configuration
-    // must not prevent Render from starting the web server.
+    // A webhook failure should not hide the real server startup.
     try {
-        redtechWebhook.start();
+        if (
+            redtechWebhook &&
+            typeof redtechWebhook.start === "function"
+        ) {
+            redtechWebhook.start();
+        }
     } catch (error) {
-        console.error("Webhook startup failed:", error.message);
-    }
-
-    botManager.restorePersisted().catch(error => {
-        console.error(
-            "Bot restore failed:",
+        originalError(
+            "[KING RED AI] Webhook startup failed:",
             error.message
         );
-    });
+    }
+
+    if (
+        botManager &&
+        typeof botManager.restorePersisted === "function"
+    ) {
+        botManager.restorePersisted().catch(error => {
+            originalError(
+                "[KING RED AI] Bot restore failed:",
+                error.message
+            );
+        });
+    }
 });
 
 function shutdown(signal) {
-    console.log(`${signal} received; shutting down KING RED AI.`);
+    originalLog(`[KING RED AI] ${signal} received.`);
 
     server.close(() => {
         for (const bot of botManager.all()) {
@@ -161,11 +213,14 @@ function shutdown(signal) {
         process.exit(0);
     });
 
-    setTimeout(() => process.exit(1), 10000).unref();
+    const forceExit = setTimeout(() => {
+        process.exit(1);
+    }, 10000);
+
+    forceExit.unref();
 }
 
 process.on("SIGTERM", () => shutdown("SIGTERM"));
 process.on("SIGINT", () => shutdown("SIGINT"));
 
 module.exports = { app, server };
-    
