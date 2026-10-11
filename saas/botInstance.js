@@ -1,11 +1,8 @@
 /**
  * botInstance — one WhatsApp connection per SaaS user.
  *
- * Extracts the connectionLogic from index.js and scopes all state
- * (sock, latestQr, myJid, settings, jsonStore) to the instance.
- * Message processing runs inside AsyncLocalStorage.run() so that
- * getSettings() and jsonStore in commands transparently use this
- * user's data without any code changes to command files.
+ * Keeps connection state scoped to each SaaS user.
+ * Message processing runs inside AsyncLocalStorage.run().
  */
 
 const path = require("path");
@@ -69,13 +66,13 @@ class BotInstance {
         this.sessionInvalidated = false;
         this.restoredFromDatabase = false;
 
-        // Newsletter / WhatsApp channel
+        // WhatsApp channel
         this.newsletterJid = "120363428521307680@newsletter";
         this.newsletterName = "Redtech Ai Updates";
         this.newsletterInviteLink =
             "https://whatsapp.com/channel/0029Vb9AwScF6sn47ClubG1Z";
 
-        // User's WhatsApp number (for pairing)
+        // User's WhatsApp number for pairing
         this.sessionId = options.sessionId || null;
     }
 
@@ -177,7 +174,7 @@ class BotInstance {
                 this.sock = null;
             }
 
-            // Restart pairing even if the old socket already closed.
+            // Restart even if the previous socket already closed.
             setTimeout(() => {
                 if (
                     this.pairingRestartInProgress &&
@@ -189,6 +186,8 @@ class BotInstance {
             }, 150);
         });
     }
+
+    // ── Session management ──────────────────────────────────────────
 
     wipeSession() {
         try {
@@ -224,7 +223,7 @@ class BotInstance {
 
         const creds = fs.readFileSync(credsPath, "utf-8");
 
-        return "FIREBOX~" +
+        return "REDTECH~" +
             Buffer.from(creds).toString("base64");
     }
 
@@ -265,6 +264,8 @@ class BotInstance {
 
     restoreSessionId(sessionId) {
         const rawId = sessionId.trim();
+
+        // Accept either the REDTECH~ or legacy prefix.
         const encoded = rawId.includes("~")
             ? rawId.split("~")[1]
             : rawId;
@@ -355,7 +356,7 @@ class BotInstance {
         this.isReconnecting = true;
         this.status = "connecting";
 
-        // SESSION_ID restore
+        // Restore SESSION_ID when necessary.
         if (this.sessionId && !this.sessionIdInvalid) {
             const credsPath = path.join(
                 this.sessionDir,
@@ -375,30 +376,30 @@ class BotInstance {
                     this.restoreSessionId(this.sessionId);
 
                     console.log(
-                        `[${this.userId}] ✅ Session restored.`
+                        `[${this.userId}] Session restored.`
                     );
                 } catch (e) {
                     console.error(
-                        `[${this.userId}] ❌ Session restore failed:`,
+                        `[${this.userId}] Session restore failed:`,
                         e.message
                     );
                 }
             }
         }
 
-        // Use MongoDB auth where available.
+        // Use MongoDB authentication where available.
         let authState;
         let usingDatabaseAuth = false;
 
         try {
             const { initDb, isOnline } =
-                require("../firebox/db");
+                require("../redtech/db");
 
             await initDb();
 
             if (isOnline()) {
                 const { useDatabaseAuthState } =
-                    require("../firebox/dbAuth");
+                    require("../redtech/dbAuth");
 
                 authState = await useDatabaseAuthState(
                     `saas_${this.userId}`
@@ -417,7 +418,7 @@ class BotInstance {
             );
         }
 
-        // Prevent a stopped instance from opening another socket.
+        // Do not start another socket after stop().
         if (this.stopped) {
             this.isReconnecting = false;
             return;
@@ -434,7 +435,7 @@ class BotInstance {
         this.restoredFromDatabase =
             usingDatabaseAuth && !!state.creds.registered;
 
-        // Fresh login cleanup
+        // Fresh login cleanup.
         if (
             !this.hasWipedSessionOnStartup &&
             !state.creds.registered &&
@@ -460,7 +461,7 @@ class BotInstance {
                 saveCreds = freshState.saveCreds;
             } catch (e) {
                 console.error(
-                    `[${this.userId}] ⚠️ Failed to clean session folder:`,
+                    `[${this.userId}] Failed to clean session folder:`,
                     e.message
                 );
             }
@@ -506,7 +507,7 @@ class BotInstance {
             getMessage: async (key) => {
                 try {
                     const { getMessage: getMsg } =
-                        require("../firebox/messageModel");
+                        require("../redtech/messageModel");
 
                     const msg = await getMsg(key.id);
 
@@ -519,7 +520,7 @@ class BotInstance {
 
         this.sock = sock;
 
-        // Instance-level trackers
+        // Instance-level trackers.
         sock.myJid = this.myJid;
         sock.stormTracker = {};
         sock.presenceTracker = {};
@@ -528,7 +529,7 @@ class BotInstance {
         sock.newsletterJid = this.newsletterJid;
         sock.newsletterName = this.newsletterName;
 
-        // Wrap sendMessage for the "View Channel" label.
+        // Attach the configured channel to outgoing messages.
         const originalSendMessage =
             sock.sendMessage.bind(sock);
 
@@ -577,12 +578,12 @@ class BotInstance {
             );
         };
 
-        // SESSION_ID watchdog
+        // SESSION_ID watchdog.
         if (this.sessionId && !this.sessionIdInvalid) {
             const wdTimer = setTimeout(() => {
                 if (!sock.user) {
                     console.log(
-                        `[${this.userId}] ⚠️ Session ID failed to connect within 30s. Enabling QR fallback.`
+                        `[${this.userId}] SESSION_ID failed to connect within 30s. Enabling QR fallback.`
                     );
 
                     this.sessionIdFailed = true;
@@ -607,7 +608,7 @@ class BotInstance {
                     this.latestQr = qr;
                 }
 
-                // Request a pairing code when WhatsApp emits QR.
+                // Request pairing code when WhatsApp emits QR.
                 if (
                     qr &&
                     usePairingCode &&
@@ -646,7 +647,7 @@ class BotInstance {
                             await sock.requestPairingCode(pNum);
 
                         console.log(
-                            `[${this.userId}] 🔗 Pairing code: ${code}`
+                            `[${this.userId}] Pairing code: ${code}`
                         );
 
                         if (this.pairingCodeResolve) {
@@ -658,7 +659,7 @@ class BotInstance {
                         this.pendingPairingNumber = null;
                     } catch (err) {
                         console.error(
-                            `[${this.userId}] ❌ Pairing code error:`,
+                            `[${this.userId}] Pairing code error:`,
                             err.message
                         );
 
@@ -668,4 +669,9 @@ class BotInstance {
                             this.pairingCodeReject = null;
                         }
 
-                        this.
+                        this.pairingCodeRequested = false;
+                    }
+                }
+
+                if (
+    
