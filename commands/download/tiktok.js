@@ -1,96 +1,77 @@
-
-const mediaApi = require("../../lib/mediaApi");
-
-const MAX_MEDIA_BYTES = 48 * 1024 * 1024;
+const axios = require("axios");
 
 module.exports = {
-    name: "tiktok",
-    aliases: ["tt"],
-    description: "Download TikTok videos without a watermark.",
-    category: "download",
+  pattern: "tiktok",
+  desc: "Download TikTok video without watermark",
+  react: "🧑‍💻",
+  category: "downloader",
+  filename: __filename,
+  use: ".tiktok <link>",
 
-    async execute({ sock, jid, args, msg }) {
-        const url = (args || []).join(" ").trim();
-
-        if (!url || !/^https?:\/\/(?:www\.|m\.|vm\.|vt\.)?tiktok\.com\//i.test(url)) {
-            return sock.sendMessage(
-                jid,
-                { text: "❓ *Usage:* .tiktok <TikTok link>\n\nExample: .tiktok https://www.tiktok.com/@user/video/123456789" },
-                { quoted: msg }
-            );
+  execute: async (conn, mek, m, { from, reply, q }) => {
+    // Helper function to send messages with contextInfo
+    const sendMessageWithContext = async (text, quoted = mek) => {
+      return await conn.sendMessage(from, {
+        text: text,
+        contextInfo: {
+          forwardingScore: 999,
+          isForwarded: true,
+          forwardedNewsletterMessageInfo: {
+            newsletterJid: "120363418906972955@newsletter",
+            newsletterName: "𝐑𝐄𝐃𝐓𝐄𝐂𝐇-𝐀𝐈",
+            serverMessageId: 200
+          }
         }
+      }, { quoted: quoted });
+    };
 
-        const react = async (emoji) => {
-            try {
-                if (msg?.key) {
-                    await sock.sendMessage(jid, {
-                        react: { text: emoji, key: msg.key }
-                    });
-                }
-            } catch (_) {}
-        };
+    try {
+      if (!q) return await sendMessageWithContext("⚠️ Please provide a TikTok link.");
+      if (!q.includes("tiktok.com")) return await sendMessageWithContext("❌ Invalid TikTok link.");
 
-        await react("⏳");
+      // React first
+      if (module.exports.react) {
+        await conn.sendMessage(from, { react: { text: module.exports.react, key: mek.key } });
+      }
 
-        let progress;
-        try {
-            progress = await sock.sendMessage(
-                jid,
-                { text: "⏳ *KING RED AI*\n\nDownloading your TikTok video. Please wait..." },
-                { quoted: msg }
-            );
+      // Inform user
+      await sendMessageWithContext("⏳ Downloading TikTok video, please wait...");
 
-            const result = await mediaApi.tiktokDownload(url);
+      // Fetch video from API
+      const apiUrl = `https://delirius-apiofc.vercel.app/download/tiktok?url=${encodeURIComponent(q)}`;
+      const { data } = await axios.get(apiUrl);
 
-            if (!result) {
-                await react("❌");
-                return sock.sendMessage(jid, {
-                    text: "❌ I couldn't download this TikTok video.\n\nPlease check that:\n• The link is correct.\n• The video is public.\n• The video is still available.\n\nTry another public TikTok link."
-                }, { quoted: msg });
-            }
+      if (!data.status || !data.data) return await sendMessageWithContext("❌ Failed to fetch TikTok video.");
 
-            const video = Buffer.isBuffer(result)
-                ? result
-                : Buffer.isBuffer(result.buffer)
-                    ? result.buffer
-                    : null;
+      const { title, like, comment, share, author, meta } = data.data;
+      const videoUrl = meta.media.find(v => v.type === "video")?.org;
 
-            if (video && video.length > 0 && video.length <= MAX_MEDIA_BYTES) {
-                await sock.sendMessage(jid, {
-                    video,
-                    mimetype: "video/mp4",
-                    caption:
-                        `🎬 *KING RED AI — TikTok Downloader*\n\n` +
-                        `👤 *Author:* ${result.author || "Unknown"}\n` +
-                        `📥 *Download:* Complete`
-                }, { quoted: msg });
+      if (!videoUrl) return await sendMessageWithContext("❌ No video found in the TikTok.");
 
-                await react("✅");
-                return;
-            }
+      const caption =
+        `🎵 *TikTok Video* 🎵\n\n` +
+        `👤 *User:* ${author.nickname} (@${author.username})\n` +
+        `📖 *Title:* ${title}\n` +
+        `👍 *Likes:* ${like}\n💬 *Comments:* ${comment}\n🔁 *Shares:* ${share}\n\n` +
+        `> _ᴘᴏᴡᴇʀᴇᴅ ʙʏ ✦ 𝐑𝐄𝐃𝐓𝐄𝐂𝐇-𝐀𝐈 ┃ ᴹᴰ ✦;
 
-            if (result.url) {
-                await sock.sendMessage(jid, {
-                    text:
-                        "⚠️ I found a video link, but couldn't safely send the video directly.\n\n" +
-                        `🔗 ${result.url}`
-                }, { quoted: msg });
-
-                await react("⚠️");
-                return;
-            }
-
-            await react("❌");
-            await sock.sendMessage(jid, {
-                text: "❌ The downloader returned no usable video. Please try another link."
-            }, { quoted: msg });
-
-        } catch (error) {
-            console.error("[TikTok Downloader]", error?.message || error);
-            await react("❌");
-            await sock.sendMessage(jid, {
-                text: "❌ TikTok download failed. Please try again later with a public video link."
-            }, { quoted: msg });
+      await conn.sendMessage(from, {
+        video: { url: videoUrl },
+        caption: caption,
+        contextInfo: {
+          forwardingScore: 999,
+          isForwarded: true,
+          forwardedNewsletterMessageInfo: {
+            newsletterJid: "120363418906972955@newsletter",
+            newsletterName: "─✦ 𝐑𝐄𝐃𝐓𝐄𝐂𝐇-𝐀𝐈 ┃ ᴹᴰ ✦──`);",
+            serverMessageId: 200
+          }
         }
+      }, { quoted: mek });
+
+    } catch (error) {
+      console.error("❌ TikTok Downloader Error:", error);
+      await sendMessageWithContext(`⚠️ Error downloading TikTok video:\n${error.message}`);
     }
+  }
 };
