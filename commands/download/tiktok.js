@@ -1,6 +1,3 @@
-
-"use strict";
-
 const mediaApi = require("../../lib/mediaApi");
 
 const MAX_VIDEO_SIZE = 45 * 1024 * 1024;
