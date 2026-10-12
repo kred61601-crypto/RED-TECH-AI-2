@@ -1,77 +1,107 @@
-const axios = require("axios");
+
+"use strict";
+
+const mediaApi = require("../../lib/mediaApi");
+
+const MAX_VIDEO_SIZE = 45 * 1024 * 1024;
+
+function isTikTokUrl(value) {
+    try {
+        const url = new URL(value);
+        const host = url.hostname.toLowerCase();
+
+        return (
+            ["http:", "https:"].includes(url.protocol) &&
+            (
+                host === "tiktok.com" ||
+                host.endsWith(".tiktok.com") ||
+                host === "vt.tiktok.com" ||
+                host === "vm.tiktok.com"
+            )
+        );
+    } catch {
+        return false;
+    }
+}
 
 module.exports = {
-  pattern: "tiktok",
-  desc: "Download TikTok video without watermark",
-  react: "🧑‍💻",
-  category: "downloader",
-  filename: __filename,
-  use: ".tiktok <link>",
+    name: "tiktok",
+    aliases: ["tt", "tikdl"],
+    description: "Download a public TikTok video",
+    category: "download",
 
-  execute: async (conn, mek, m, { from, reply, q }) => {
-    // Helper function to send messages with contextInfo
-    const sendMessageWithContext = async (text, quoted = mek) => {
-      return await conn.sendMessage(from, {
-        text: text,
-        contextInfo: {
-          forwardingScore: 999,
-          isForwarded: true,
-          forwardedNewsletterMessageInfo: {
-            newsletterJid: "120363418906972955@newsletter",
-            newsletterName: "𝐑𝐄𝐃𝐓𝐄𝐂𝐇-𝐀𝐈",
-            serverMessageId: 200
-          }
+    async execute({ sock, jid, args = [], msg }) {
+        const url = args[0];
+
+        if (!url || !isTikTokUrl(url)) {
+            return sock.sendMessage(jid, {
+                text:
+                    "╭━━━〔 🎵 TIKTOK DOWNLOADER 〕━━━╮\n" +
+                    "┃ ❌ Please send a valid TikTok link.\n┃\n" +
+                    "┃ Example:\n" +
+                    "┃ .tiktok https://www.tiktok.com/@user/video/123\n" +
+                    "╰━━━━━━━━━━━━━━━━━━━━━━━━━━━━╯"
+            }, { quoted: msg });
         }
-      }, { quoted: quoted });
-    };
 
-    try {
-      if (!q) return await sendMessageWithContext("⚠️ Please provide a TikTok link.");
-      if (!q.includes("tiktok.com")) return await sendMessageWithContext("❌ Invalid TikTok link.");
+        let statusMessage;
 
-      // React first
-      if (module.exports.react) {
-        await conn.sendMessage(from, { react: { text: module.exports.react, key: mek.key } });
-      }
+        try {
+            statusMessage = await sock.sendMessage(jid, {
+                text: "⏳ *REDTECH-AI is downloading your TikTok...*\nPlease wait."
+            }, { quoted: msg });
 
-      // Inform user
-      await sendMessageWithContext("⏳ Downloading TikTok video, please wait...");
+            const result = await mediaApi.tiktokDownload(url);
 
-      // Fetch video from API
-      const apiUrl = `https://delirius-apiofc.vercel.app/download/tiktok?url=${encodeURIComponent(q)}`;
-      const { data } = await axios.get(apiUrl);
+            if (!result) {
+                throw new Error(
+                    "The downloader returned no media. The video may be private or the provider unavailable."
+                );
+            }
 
-      if (!data.status || !data.data) return await sendMessageWithContext("❌ Failed to fetch TikTok video.");
+            const buffer = result.buffer;
 
-      const { title, like, comment, share, author, meta } = data.data;
-      const videoUrl = meta.media.find(v => v.type === "video")?.org;
+            if (buffer && Buffer.isBuffer(buffer) && buffer.length > 0) {
+                if (buffer.length > MAX_VIDEO_SIZE) {
+                    throw new Error("The video exceeds the bot's upload size limit.");
+                }
 
-      if (!videoUrl) return await sendMessageWithContext("❌ No video found in the TikTok.");
+                await sock.sendMessage(jid, {
+                    video: buffer,
+                    mimetype: "video/mp4",
+                    caption:
+                        "╭━━━〔 🎵 TIKTOK DOWNLOADER 〕━━━╮\n" +
+                        `┃ 👤 Author: ${result.author || "TikTok creator"}\n` +
+                        `┃ 🎬 Title: ${result.title || "TikTok video"}\n` +
+                        "┃ 💧 No-watermark media if provided by source\n" +
+                        "╰━━━━━━━━━━━━━━━━━━━━━━━━━━━━╯\n\n" +
+                        "👑 REDTECH-AI MD • Powered by Denzel"
+                }, { quoted: msg });
 
-      const caption =
-        `🎵 *TikTok Video* 🎵\n\n` +
-        `👤 *User:* ${author.nickname} (@${author.username})\n` +
-        `📖 *Title:* ${title}\n` +
-        `👍 *Likes:* ${like}\n💬 *Comments:* ${comment}\n🔁 *Shares:* ${share}\n\n` +
-        `> _ᴘᴏᴡᴇʀᴇᴅ ʙʏ ✦ 𝐑𝐄𝐃𝐓𝐄𝐂𝐇-𝐀𝐈 ┃ ᴹᴰ ✦;
+                return;
+            }
 
-      await conn.sendMessage(from, {
-        video: { url: videoUrl },
-        caption: caption,
-        contextInfo: {
-          forwardingScore: 999,
-          isForwarded: true,
-          forwardedNewsletterMessageInfo: {
-            newsletterJid: "120363418906972955@newsletter",
-            newsletterName: "─✦ 𝐑𝐄𝐃𝐓𝐄𝐂𝐇-𝐀𝐈 ┃ ᴹᴰ ✦──`);",
-            serverMessageId: 200
-          }
+            // A URL alone is not a downloaded video. Tell the user clearly.
+            if (result.url) {
+                throw new Error(
+                    "A video link was found, but the bot could not download the video bytes. Check the downloader API or server network."
+                );
+            }
+
+            throw new Error("No video file was returned.");
+        } catch (error) {
+            console.error("[REDTECH TIKTOK ERROR]", error?.stack || error);
+
+            await sock.sendMessage(jid, {
+                text:
+                    "╭━━━〔 ❌ TIKTOK DOWNLOAD FAILED 〕━━━╮\n" +
+                    "┃ The video could not be downloaded.\n┃\n" +
+                    "┃ Try a public TikTok video link.\n" +
+                    "┃ If it still fails, the download provider\n" +
+                    "┃ may be unavailable or blocked.\n" +
+                    "╰━━━━━━━━━━━━━━━━━━━━━━━━━━━━╯\n\n" +
+                    "⚡ REDTECH-AI MD"
+            }, { quoted: msg });
         }
-      }, { quoted: mek });
-
-    } catch (error) {
-      console.error("❌ TikTok Downloader Error:", error);
-      await sendMessageWithContext(`⚠️ Error downloading TikTok video:\n${error.message}`);
     }
-  }
 };
