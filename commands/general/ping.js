@@ -1,15 +1,33 @@
 module.exports = {
     name: "ping",
     aliases: ["p"],
-    description: "Check bot speed",
+    description: "Check bot response speed",
     category: "general",
-    execute: async (ctx) => {
+
+    async execute({ sock, jid, msg }) {
         const start = Date.now();
-        const sent = await ctx.sock.sendMessage(ctx.jid, { text: "Testing speed..." });
-        const end = Date.now();
-        await ctx.sock.sendMessage(ctx.jid, { 
-            text: ⚡`Redtech 𝐏𝐨𝐧𝐠! Speed: \`${end - start}ms\``,
-            edit: sent.key 
-        });
+
+        try {
+            const sent = await sock.sendMessage(jid, {
+                text: "⚡ Testing REDTECH-AI speed..."
+            }, { quoted: msg });
+
+            const latency = Date.now() - start;
+
+            await sock.sendMessage(jid, {
+                text:
+                    "╭━━━〔 ⚡ REDTECH-AI PONG 〕━━━╮\n" +
+                    `┃ 🚀 Response: ${latency} ms\n` +
+                    `┃ 🟢 Status: ONLINE\n` +
+                    "┃ 👑 Powered by Denzel\n" +
+                    "╰━━━━━━━━━━━━━━━━━━━━╯",
+                edit: sent.key
+            });
+        } catch (error) {
+            console.error("[PING]", error);
+            await sock.sendMessage(jid, {
+                text: "⚠️ Ping failed. Please try again."
+            });
+        }
     }
 };
