@@ -1,91 +1,169 @@
 const { getSettings, updateSettings } = require("../../lib/settings");
-const jsonStore = require("../../firebox/jsonStore");
+const jsonStore = require("../../redtech/jsonStore");
 
 module.exports = {
     name: "antistatusmention",
-    aliases: ["antigroupstatusmention", "antigroupstatus", "antistatus", "antitag"],
+    aliases: [
+        "antigroupstatusmention",
+        "antigroupstatus",
+        "antistatus",
+        "antitag"
+    ],
     description: "Manage group or global anti-status-mention protection",
     category: "admin",
     adminOnly: true,
     groupOnly: true,
+
     execute: async (ctx) => {
-        const { sock, jid, args, msg } = ctx;
-        const settings = getSettings();
+        const { sock, jid, args = [], msg } = ctx;
 
-        const action = args[0]?.toLowerCase().trim();
-        const target = args[1]?.toLowerCase().trim();
-
-        if (!action) {
-            let help = `🏷️ *Anti-Status-Mention Control Panel*\n`;
-            help += `━━━━━━━━━━━━━━━━━━\n\n`;
-            
-            const localMode = jsonStore.get(`antistatusmention_mode_${jid}`, null);
-            const activeMode = localMode !== null ? localMode : (settings.antiStatusMentionGlobal || "off");
-
-            help += `🔹 *Current Group Mode:* ${activeMode.toUpperCase()}${localMode === null ? " _(Global Inherited)_" : ""}\n`;
-            help += `🔹 *Global Mode:* ${settings.antiStatusMentionGlobal.toUpperCase()}\n`;
-            help += `🔹 *Warn Limit:* ${settings.antiStatusMentionLimit || 3}\n\n`;
-            help += `🔧 *Commands:*\n`;
-            help += `▸ \`.antistatusmention warn\` — Warn mode\n`;
-            help += `▸ \`.antistatusmention delete\` — Delete + Warn mode\n`;
-            help += `▸ \`.antistatusmention remove\` — Kick immediately\n`;
-            help += `▸ \`.antistatusmention off\` — Disable for this group\n\n`;
-            help += `▸ \`.antistatusmention <mode> all\` — Enable globally for ALL groups\n`;
-            help += `▸ \`.antistatusmention limit <1-10>\` — Set warn limit before kick\n`;
-            help += `▸ \`.antistatusmention resetwarns\` — Reset warning counts for this group`;
-
-            return await sock.sendMessage(jid, { text: help }, { quoted: msg });
+        // React to the command before sending the command response.
+        if (msg?.key && !msg.key.fromMe) {
+            try {
+                await sock.sendMessage(jid, {
+                    react: {
+                        text: "⚡",
+                        key: msg.key
+                    }
+                });
+            } catch (error) {
+                console.error(
+                    "[REDTECH] Anti-status command reaction failed:",
+                    error.message
+                );
+            }
         }
 
-        const validModes = ["warn", "delete", "remove", "off"];
+        const reply = async (text) => {
+            return sock.sendMessage(
+                jid,
+                { text },
+                msg ? { quoted: msg } : {}
+            );
+        };
 
-        // 1. Reset Warnings
-        if (action === "resetwarns" || action === "resetwarn" || action === "clearwarns") {
+        if (!jid || !jid.endsWith("@g.us")) {
+            return reply(
+                "❌ This command can only be used inside a WhatsApp group."
+            );
+        }
+
+        const settings = getSettings();
+        const action = String(args[0] || "").toLowerCase().trim();
+        const target = String(args[1] || "").toLowerCase().trim();
+
+        const localMode = jsonStore.get(
+            `antistatusmention_mode_${jid}`,
+            null
+        );
+
+        const globalMode = settings.antiStatusMentionGlobal || "off";
+        const activeMode = localMode !== null ? localMode : globalMode;
+        const warnLimit = settings.antiStatusMentionLimit || 3;
+
+        // Help / status panel
+        if (!action) {
+            const help =
+                "🏷️ *REDTECH-AI — ANTI STATUS MENTION*\n" +
+                "━━━━━━━━━━━━━━━━━━\n\n" +
+                `🔹 *Current Group Mode:* ${String(activeMode).toUpperCase()}` +
+                `${localMode === null ? " _(Global inherited)_" : ""}\n` +
+                `🔹 *Global Mode:* ${String(globalMode).toUpperCase()}\n` +
+                `🔹 *Warn Limit:* ${warnLimit}\n\n` +
+                "⚡ *GROUP COMMANDS*\n" +
+                "▸ .antistatusmention warn\n" +
+                "▸ .antistatusmention delete\n" +
+                "▸ .antistatusmention remove\n" +
+                "▸ .antistatusmention off\n\n" +
+                "🌍 *GLOBAL COMMANDS*\n" +
+                "▸ .antistatusmention warn all\n" +
+                "▸ .antistatusmention delete all\n" +
+                "▸ .antistatusmention remove all\n" +
+                "▸ .antistatusmention off all\n\n" +
+                "⚙️ *OTHER SETTINGS*\n" +
+                "▸ .antistatusmention limit 3\n" +
+                "▸ .antistatusmention resetwarns\n\n" +
+                "Use these commands as a group admin or bot owner.";
+
+            return reply(help);
+        }
+
+        // Reset warnings for members in this group.
+        if (
+            ["resetwarns", "resetwarn", "clearwarns"].includes(action)
+        ) {
             const cache = jsonStore.getAll();
             const prefix = `antistatusmention_warns_${jid}_`;
             let clearedCount = 0;
 
-            for (const key in cache) {
+            for (const key of Object.keys(cache)) {
                 if (key.startsWith(prefix)) {
                     delete cache[key];
                     clearedCount++;
                 }
             }
+
             if (clearedCount > 0) {
                 jsonStore.save();
             }
 
-            return await sock.sendMessage(jid, { text: `✅ *Warnings Reset:* Cleared warning counts for all members in this group.` }, { quoted: msg });
+            return reply(
+                `✅ *Warnings reset.* Cleared ${clearedCount} warning counter(s) for this group.`
+            );
         }
 
-        // 2. Limit Configuration
-        if (action === "limit" || action === "warnlimit") {
-            const limit = parseInt(args[1]);
-            if (isNaN(limit) || limit < 1 || limit > 10) {
-                return await sock.sendMessage(jid, { text: "⚠️ Please specify a valid warn limit between 1 and 10." }, { quoted: msg });
+        // Configure the warning limit.
+        if (["limit", "warnlimit"].includes(action)) {
+            const limit = Number.parseInt(args[1], 10);
+
+            if (!Number.isInteger(limit) || limit < 1 || limit > 10) {
+                return reply(
+                    "⚠️ Set a valid warning limit from 1 to 10.\n" +
+                    "Example: .antistatusmention limit 3"
+                );
             }
 
-            await updateSettings({ antiStatusMentionLimit: limit });
-            return await sock.sendMessage(jid, { text: `✅ *Warn Limit Updated:* Members will be removed after *${limit}* warnings.` }, { quoted: msg });
+            await updateSettings({
+                antiStatusMentionLimit: limit
+            });
+
+            return reply(
+                `✅ Warning limit updated to *${limit}*.\n` +
+                "⚠️ Your automation code must enforce this limit for it to take effect."
+            );
         }
 
-        // 3. Modes Configuration
+        // Configure group or global mode.
+        const validModes = ["warn", "delete", "remove", "off"];
+
         if (validModes.includes(action)) {
             if (target === "all" || target === "global") {
-                // Global setting
-                await updateSettings({ antiStatusMentionGlobal: action });
-                return await sock.sendMessage(jid, { 
-                    text: `✅ *Global Anti-Status-Mention Updated:* All groups default mode is now set to *${action.toUpperCase()}* (unless overridden locally).` 
-                }, { quoted: msg });
-            } else {
-                // Group specific setting
-                jsonStore.set(`antistatusmention_mode_${jid}`, action);
-                return await sock.sendMessage(jid, { 
-                    text: `✅ *Anti-Status-Mention Updated:* This group mode is now set to *${action.toUpperCase()}*.` 
-                }, { quoted: msg });
+                await updateSettings({
+                    antiStatusMentionGlobal: action
+                });
+
+                return reply(
+                    "✅ *Global anti-status-mention setting updated.*\n\n" +
+                    `🌍 Default mode for all groups: *${action.toUpperCase()}*\n` +
+                    "Groups with their own saved setting may override this mode."
+                );
             }
+
+            jsonStore.set(
+                `antistatusmention_mode_${jid}`,
+                action
+            );
+
+            return reply(
+                "✅ *Group anti-status-mention setting updated.*\n\n" +
+                `🛡️ Mode: *${action.toUpperCase()}*`
+            );
         }
 
-        return await sock.sendMessage(jid, { text: "⚠️ Unknown subcommand. Type `.antistatusmention` to see all available commands." }, { quoted: msg });
+        return reply(
+            "⚠️ Unknown command.\n" +
+            "Type .antistatusmention to see the help panel."
+        );
     }
 };
+    
