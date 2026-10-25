@@ -30,7 +30,7 @@ If you like Redtech Bot, please take a moment to support the repository:
     <img src="https://railway.app/button.svg" alt="Deploy on Railway" height="40">
   </a>
   &nbsp;&nbsp;
-  <a href="https://heroku.com/deploy?template=https://github.com/njogu26713-commits/firebox-bot">
+  <a href="https://heroku.com/deploy?template=https://readme-typing-svg.demolab.com/demo/?weight=500&size=40&color=C00E54&width=563&height=90&lines=%E2%9C%A6+%F0%9D%90%91%F0%9D%90%84%F0%9D%90%83%F0%9D%90%93%F0%9D%90%84%F0%9D%90%82%F0%9D%90%87-%F0%9D%90%80%F0%9D%90%88+%E2%94%83+%E1%B4%B9%E1%B4%B0+%E2%9C%A6">
     <img src="https://www.herokucdn.com/deploy/button.svg" alt="Deploy on Heroku" height="40">
   </a>
   &nbsp;&nbsp;
