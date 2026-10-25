@@ -1,9 +1,9 @@
-
 /**
  * botInstance — one WhatsApp connection per SaaS user.
  *
- * Each SaaS user has their own WhatsApp connection and JSON store.
- * Message processing runs inside AsyncLocalStorage context.
+ * Scopes socket, QR, JID, settings, and store state to each user.
+ * Message processing runs inside AsyncLocalStorage.run() so commands
+ * transparently use the correct user's data.
  */
 
 const path = require("path");
@@ -28,9 +28,7 @@ const {
     handleAutomation,
     handleMessageDelete
 } = require("../lib/automation");
-
 const { handleVV2EmojiReply } = require("../lib/vv2EmojiTrigger");
-
 const botContext = require("../lib/botContext");
 const { createUserStore } = require("../redtech/jsonStore");
 const SettingsManager = require("./settingsManager");
@@ -58,12 +56,14 @@ class BotInstance {
         this.alwaysOnlineInterval = null;
         this.healthCheckInterval = null;
 
-        // Pairing
+        // Pairing state
         this.pairingCodeResolve = null;
         this.pairingCodeReject = null;
         this.pairingRestartInProgress = false;
         this.pairingCodeRequested = false;
         this.pendingPairingNumber = null;
+
+        // Session state
         this.sessionIdFailed = false;
         this.sessionIdInvalid = false;
         this.sessionInvalidated = false;
@@ -73,11 +73,10 @@ class BotInstance {
         this.newsletterJid = "120363428521307680@newsletter";
         this.newsletterName = "Redtech Ai Updates";
 
-        // User's WhatsApp session
         this.sessionId = options.sessionId || null;
     }
 
-    // ── Per-user context ────────────────────────────────────────────────
+    // ── Context runner ──────────────────────────────────────────────
 
     _runInContext(fn) {
         const ctx = {
@@ -90,7 +89,7 @@ class BotInstance {
         return botContext.run(ctx, fn);
     }
 
-    // ── Start ───────────────────────────────────────────────────────────
+    // ── Start ───────────────────────────────────────────────────────
 
     async start() {
         this.stopped = false;
@@ -104,7 +103,7 @@ class BotInstance {
         await this._connectionLogic();
     }
 
-    // ── Stop ────────────────────────────────────────────────────────────
+    // ── Stop ────────────────────────────────────────────────────────
 
     stop() {
         this.stopped = true;
@@ -123,65 +122,105 @@ class BotInstance {
         this.myJid = null;
     }
 
-    // ── Pairing trigger ─────────────────────────────────────────────────
+    // ── Pairing trigger ─────────────────────────────────────────────
 
     triggerPairingRestart(phone) {
+        const number = String(phone || "").replace(/[\s()+-]/g, "");
+
+        if (!/^[1-9]\d{7,14}$/.test(number)) {
+            return Promise.reject(new Error("Invalid phone number."));
+        }
+
+        if (this.pairingCodeResolve || this.pairingRestartInProgress) {
+            return Promise.reject(
+                new Error("A pairing request is already in progress.")
+            );
+        }
+
+        if (this.status === "online") {
+            return Promise.reject(
+                new Error("This WhatsApp account is already connected.")
+            );
+        }
+
         return new Promise((resolve, reject) => {
-            this.pairingCodeResolve = resolve;
-            this.pairingCodeReject = reject;
+            let settled = false;
+            let timer = null;
 
-            const timer = setTimeout(() => {
-                if (this.pairingCodeResolve === resolve) {
-                    this.pairingCodeResolve = null;
-                    this.pairingCodeReject = null;
+            const finish = (error, code) => {
+                if (settled) return;
+                settled = true;
 
-                    reject(
-                        new Error("Timed out waiting for pairing code (15s).")
-                    );
-                }
-            }, 25000);
+                if (timer) clearTimeout(timer);
+
+                this.pairingCodeResolve = null;
+                this.pairingCodeReject = null;
+                this.pendingPairingNumber = null;
+                this.pairingCodeRequested = false;
+                this.pairingRestartInProgress = false;
+
+                if (error) reject(error);
+                else resolve(code);
+            };
+
+            this.pairingCodeResolve = code => finish(null, code);
+
+            this.pairingCodeReject = error => {
+                finish(
+                    error instanceof Error
+                        ? error
+                        : new Error(String(error || "Pairing failed."))
+                );
+            };
+
+            timer = setTimeout(() => {
+                finish(
+                    new Error(
+                        "Timed out waiting for the WhatsApp pairing code. Please try again."
+                    )
+                );
+            }, 65000);
 
             if (timer.unref) timer.unref();
 
-            this.pendingPairingNumber = phone;
+            this.pendingPairingNumber = number;
             this.pairingCodeRequested = false;
-            this.sessionId = null;
-            this.sessionIdFailed = false;
-
-            // Clear stale session files before a new pairing.
-            try {
-                if (fs.existsSync(this.sessionDir)) {
-                    fs.readdirSync(this.sessionDir).forEach(file => {
-                        try {
-                            fs.unlinkSync(path.join(this.sessionDir, file));
-                        } catch (_) {}
-                    });
-                }
-            } catch (_) {}
-
             this.pairingRestartInProgress = true;
+            this.sessionIdFailed = false;
+            this.stopped = false;
 
-            if (this.sock) {
-                const oldSock = this.sock;
+            // Never delete saved credentials just to request a pairing code.
+            const oldSock = this.sock;
+            this.sock = null;
+            this.isReconnecting = false;
 
+            if (oldSock) {
                 try {
-                    oldSock.end(new Error("Pairing restart"));
-                } catch (_) {}
-
-                this.sock = null;
+                    oldSock.end(
+                        new Error("Restarting connection for pairing.")
+                    );
+                } catch (error) {
+                    console.warn(
+                        `[${this.userId}] Socket shutdown warning:`,
+                        error.message
+                    );
+                }
             }
 
-            setTimeout(() => {
-                if (
-                    this.pairingRestartInProgress &&
-                    !this.isReconnecting &&
-                    !this.stopped
-                ) {
-                    this._connectionLogic();
+            setTimeout(async () => {
+                if (settled || this.stopped) return;
+
+                try {
+                    this.isReconnecting = false;
+                    await this._connectionLogic();
+                } catch (error) {
+                    finish(error);
                 }
-            }, 150);
+            }, 300);
         });
     }
+
+    // ── Session utilities ───────────────────────────────────────────
 
     wipeSession() {
         try {
@@ -249,10 +288,14 @@ class BotInstance {
     }
 
     restoreSessionId(sessionId) {
-        const rawId = sessionId.trim();
+        const rawId = String(sessionId || "").trim();
         const encoded = rawId.includes("~")
             ? rawId.split("~")[1]
             : rawId;
+
+        if (!encoded) {
+            throw new Error("Session ID is empty.");
+        }
 
         const buffer = Buffer.from(encoded, "base64");
 
@@ -308,10 +351,13 @@ class BotInstance {
         }
 
         const parsed = JSON.parse(finalJson);
-        const creds = parsed.creds || (parsed.noiseKey ? parsed : null);
+        const creds = parsed.creds ||
+            (parsed.noiseKey ? parsed : null);
 
         if (!creds) {
-            throw new Error("No credentials found inside Session ID.");
+            throw new Error(
+                "No credentials found inside Session ID."
+            );
         }
 
         creds.registered = true;
@@ -326,7 +372,7 @@ class BotInstance {
         );
     }
 
-    // ── Core connection logic ───────────────────────────────────────────
+    // ── Core connection logic ───────────────────────────────────────
 
     async _connectionLogic() {
         if (this.stopped || this.isReconnecting) return;
@@ -334,9 +380,12 @@ class BotInstance {
         this.isReconnecting = true;
         this.status = "connecting";
 
-        // Restore SESSION_ID if needed.
+        // Restore credentials from SESSION_ID if needed.
         if (this.sessionId && !this.sessionIdInvalid) {
-            const credsPath = path.join(this.sessionDir, "creds.json");
+            const credsPath = path.join(
+                this.sessionDir,
+                "creds.json"
+            );
 
             const sessionExists =
                 fs.existsSync(credsPath) &&
@@ -349,7 +398,9 @@ class BotInstance {
 
                 try {
                     this.restoreSessionId(this.sessionId);
-                    console.log(`[${this.userId}] Session restored.`);
+                    console.log(
+                        `[${this.userId}] Session restored.`
+                    );
                 } catch (error) {
                     console.error(
                         `[${this.userId}] Session restore failed:`,
@@ -359,7 +410,7 @@ class BotInstance {
             }
         }
 
-        // MongoDB auth state, with local multi-file fallback.
+        // Use MongoDB auth when configured; otherwise use local files.
         let authState;
         let usingDatabaseAuth = false;
 
@@ -369,8 +420,9 @@ class BotInstance {
             await initDb();
 
             if (isOnline()) {
-                const { useDatabaseAuthState } =
-                    require("../firebox/dbAuth");
+                const {
+                    useDatabaseAuthState
+                } = require("../firebox/dbAuth");
 
                 authState = await useDatabaseAuthState(
                     `saas_${this.userId}`
@@ -403,11 +455,12 @@ class BotInstance {
         this.restoredFromDatabase =
             usingDatabaseAuth && !!state.creds.registered;
 
-        // Fresh login cleanup.
+        // Do not erase auth files while a pairing request is active.
         if (
             !this.hasWipedSessionOnStartup &&
             !state.creds.registered &&
-            !this.sessionId
+            !this.sessionId &&
+            !this.pendingPairingNumber
         ) {
             this.hasWipedSessionOnStartup = true;
 
@@ -415,7 +468,9 @@ class BotInstance {
                 if (fs.existsSync(this.sessionDir)) {
                     fs.readdirSync(this.sessionDir).forEach(file => {
                         try {
-                            fs.unlinkSync(path.join(this.sessionDir, file));
+                            fs.unlinkSync(
+                                path.join(this.sessionDir, file)
+                            );
                         } catch (_) {}
                     });
                 }
@@ -434,8 +489,31 @@ class BotInstance {
             }
         }
 
+        // Existing registered credentials cannot request a new pairing code.
+        // Preserve them instead of destroying a connected user's session.
+        if (
+            this.pendingPairingNumber &&
+            state.creds.registered
+        ) {
+            const error = new Error(
+                "This account already has saved WhatsApp credentials. " +
+                "Use a new, separate session for a new pairing request; " +
+                "saved credentials were preserved."
+            );
+
+            this.isReconnecting = false;
+            this.status = "offline";
+
+            if (this.pairingCodeReject) {
+                this.pairingCodeReject(error);
+            }
+
+            return;
+        }
+
         const usePairingCode =
-            !!this.pendingPairingNumber && !state.creds.registered;
+            !!this.pendingPairingNumber &&
+            !state.creds.registered;
 
         const msgRetryCounterCache = new NodeCache();
         const logger = P({ level: "silent" });
@@ -443,16 +521,24 @@ class BotInstance {
         let version = [2, 3000, 1017531287];
 
         try {
-            const { version: latestVer } =
+            const { version: latestVersion } =
                 await fetchLatestBaileysVersion();
 
-            version = latestVer;
+            version = latestVersion;
         } catch (_) {}
+
+        if (this.stopped) {
+            this.isReconnecting = false;
+            return;
+        }
 
         const sock = makeWASocket({
             auth: {
                 creds: state.creds,
-                keys: makeCacheableSignalKeyStore(state.keys, logger)
+                keys: makeCacheableSignalKeyStore(
+                    state.keys,
+                    logger
+                )
             },
             logger,
             version,
@@ -469,12 +555,13 @@ class BotInstance {
 
             getMessage: async key => {
                 try {
-                    const { getMessage: getMsg } =
-                        require("../firebox/messageModel");
+                    const {
+                        getMessage: getMsg
+                    } = require("../firebox/messageModel");
 
-                    const message = await getMsg(key.id);
+                    const msg = await getMsg(key.id);
 
-                    return message ? message.content : undefined;
+                    return msg ? msg.content : undefined;
                 } catch (_) {
                     return undefined;
                 }
@@ -483,6 +570,7 @@ class BotInstance {
 
         this.sock = sock;
 
+        // Per-instance command and automation trackers.
         sock.myJid = this.myJid;
         sock.stormTracker = {};
         sock.presenceTracker = {};
@@ -491,37 +579,37 @@ class BotInstance {
         sock.newsletterJid = this.newsletterJid;
         sock.newsletterName = this.newsletterName;
 
-        // Preserve the existing newsletter forwarding-label behavior.
+        // Newsletter forwarding-label behavior.
         const originalSendMessage = sock.sendMessage.bind(sock);
 
         sock.sendMessage = async (jid, content, options = {}) => {
             const settings = this.settingsManager.get();
 
-            if (!settings.hideViewChannel && this.newsletterJid) {
+            if (
+                !settings.hideViewChannel &&
+                this.newsletterJid &&
+                content &&
+                typeof content === "object" &&
+                !content.delete &&
+                !content.react
+            ) {
+                if (!content.contextInfo) {
+                    content.contextInfo = {};
+                }
+
                 if (
-                    content &&
-                    typeof content === "object" &&
-                    !content.delete &&
-                    !content.react
+                    !content.contextInfo
+                        .forwardedNewsletterMessageInfo
                 ) {
-                    if (!content.contextInfo) {
-                        content.contextInfo = {};
-                    }
+                    content.contextInfo.forwardingScore = 999;
+                    content.contextInfo.isForwarded = true;
 
-                    if (
-                        !content.contextInfo
-                            .forwardedNewsletterMessageInfo
-                    ) {
-                        content.contextInfo.forwardingScore = 999;
-                        content.contextInfo.isForwarded = true;
-
-                        content.contextInfo
-                            .forwardedNewsletterMessageInfo = {
-                                newsletterJid: this.newsletterJid,
-                                newsletterName: this.newsletterName,
-                                serverMessageId: 1
-                            };
-                    }
+                    content.contextInfo
+                        .forwardedNewsletterMessageInfo = {
+                            newsletterJid: this.newsletterJid,
+                            newsletterName: this.newsletterName,
+                            serverMessageId: 1
+                        };
                 }
             }
 
@@ -530,28 +618,32 @@ class BotInstance {
 
         // SESSION_ID watchdog.
         if (this.sessionId && !this.sessionIdInvalid) {
-            const watchdog = setTimeout(() => {
+            const watchdogTimer = setTimeout(() => {
                 if (!sock.user) {
                     console.log(
-                        `[${this.userId}] Session ID failed within 30s.`
+                        `[${this.userId}] SESSION_ID did not connect within 30 seconds.`
                     );
 
                     this.sessionIdFailed = true;
                 }
             }, 30000);
 
-            if (watchdog.unref) watchdog.unref();
+            if (watchdogTimer.unref) watchdogTimer.unref();
         }
 
         sock.ev.on("creds.update", saveCreds);
 
-        // ── Connection events ──────────────────────────────────────────
+        // ── Connection updates ──────────────────────────────────────
 
         sock.ev.on("connection.update", async update => {
             const { connection, lastDisconnect, qr } = update;
 
-            if (qr) this.latestQr = qr;
+            if (qr) {
+                this.latestQr = qr;
+            }
 
+            // Request a pairing code only when a QR event indicates that
+            // WhatsApp has initialized the connection.
             if (
                 qr &&
                 usePairingCode &&
@@ -574,21 +666,21 @@ class BotInstance {
                         );
                     }
 
-                    const number = this.pendingPairingNumber.replace(
+                    const phone = this.pendingPairingNumber.replace(
                         /[^0-9]/g,
                         ""
                     );
 
-                    if (!/^\d{7,15}$/.test(number)) {
+                    if (!/^\d{7,15}$/.test(phone)) {
                         throw new Error(
                             "Invalid phone number for WhatsApp pairing."
                         );
                     }
 
-                    const code = await sock.requestPairingCode(number);
+                    const code = await sock.requestPairingCode(phone);
 
                     console.log(
-                        `[${this.userId}] Pairing code: ${code}`
+                        `[${this.userId}] Pairing code generated.`
                     );
 
                     if (this.pairingCodeResolve) {
@@ -620,9 +712,11 @@ class BotInstance {
                 !usePairingCode
             ) {
                 console.log(
-                    `[${this.userId}] QR code available`
+                    `[${this.userId}] QR code available.`
                 );
             }
+
+            // ── Connection opened ──────────────────────────────────
 
             if (connection === "open") {
                 this.latestQr = null;
@@ -631,7 +725,9 @@ class BotInstance {
                 this.status = "online";
                 this.botStartTime = Math.floor(Date.now() / 1000);
 
-                console.log(`[${this.userId}] Bot connected!`);
+                console.log(
+                    `[${this.userId}] Bot connected successfully.`
+                );
 
                 try {
                     const { initDb } = require("../redtech/db");
@@ -645,7 +741,8 @@ class BotInstance {
                 const settings = this.settingsManager.get();
 
                 if (settings.alwaysOnline) {
-                    await sock.sendPresenceUpdate("available")
+                    await sock
+                        .sendPresenceUpdate("available")
                         .catch(() => {});
                 }
 
@@ -654,22 +751,28 @@ class BotInstance {
                 }
 
                 this.alwaysOnlineInterval = setInterval(async () => {
-                    const currentSettings = this.settingsManager.get();
+                    if (this.sock !== sock) return;
+
+                    const currentSettings =
+                        this.settingsManager.get();
 
                     if (currentSettings.alwaysOnline) {
-                        await sock.sendPresenceUpdate("available")
+                        await sock
+                            .sendPresenceUpdate("available")
                             .catch(() => {});
                     }
                 }, 15000);
 
                 // Resolve newsletter JID.
                 try {
-                    const metadata = await sock.newsletterMetadata(
-                        "invite",
-                        "0029VbCwmFXDzgT4FzZm6d28"
-                    ).catch(() => null);
+                    const metadata = await sock
+                        .newsletterMetadata(
+                            "invite",
+                            "0029VbCwmFXDzgT4FzZm6d28"
+                        )
+                        .catch(() => null);
 
-                    if (metadata?.id) {
+                    if (metadata && metadata.id) {
                         this.newsletterJid = metadata.id;
                         this.newsletterName =
                             metadata.subject || "Redtech Ai Updates";
@@ -679,14 +782,17 @@ class BotInstance {
                     }
                 } catch (_) {}
 
-                // Set connected account JID.
-                const myJid = (sock.user && sock.user.id) || "";
-                const cleanJid = myJid.split(":")[0];
-                const domain = myJid.includes("@lid")
+                // Record this connection's JID.
+                const jid = (sock.user && sock.user.id) || "";
+                const cleanJid = jid.split(":")[0];
+                const domain = jid.includes("@lid")
                     ? "@lid"
                     : "@s.whatsapp.net";
 
-                this.myJid = cleanJid ? cleanJid + domain : "";
+                this.myJid = cleanJid
+                    ? cleanJid + domain
+                    : "";
+
                 sock.myJid = this.myJid;
 
                 console.log(
@@ -699,6 +805,8 @@ class BotInstance {
                 }
 
                 this.healthCheckInterval = setInterval(async () => {
+                    if (this.sock !== sock || this.stopped) return;
+
                     try {
                         const wsOpen = sock &&
                             sock.ws &&
@@ -715,18 +823,26 @@ class BotInstance {
                             throw new Error("WebSocket not open");
                         }
 
-                        await Promise.race([
-                            sock.fetchBlocklist().catch(() => null),
-                            new Promise((_, reject) =>
-                                setTimeout(
-                                    () => reject(new Error("timeout")),
-                                    15000
-                                )
-                            )
-                        ]);
+                        let timeout;
+
+                        try {
+                            await Promise.race([
+                                sock.fetchBlocklist().catch(() => null),
+                                new Promise((_, reject) => {
+                                    timeout = setTimeout(
+                                        () => reject(
+                                            new Error("Health check timeout")
+                                        ),
+                                        15000
+                                    );
+                                })
+                            ]);
+                        } finally {
+                            if (timeout) clearTimeout(timeout);
+                        }
                     } catch (error) {
                         console.error(
-                            `[${this.userId}] Watchdog failed:`,
+                            `[${this.userId}] Health watchdog failed:`,
                             error.message
                         );
 
@@ -739,13 +855,21 @@ class BotInstance {
                         this.status = "offline";
                         this.isReconnecting = false;
 
-                        setTimeout(
-                            () => this._connectionLogic(),
-                            5000
-                        );
+                        setTimeout(() => {
+                            if (!this.stopped && this.sock === sock) {
+                                this._connectionLogic().catch(err => {
+                                    console.error(
+                                        `[${this.userId}] Reconnect error:`,
+                                        err.message
+                                    );
+                                });
+                            }
+                        }, 5000);
                     }
                 }, 3 * 60 * 1000);
             }
+
+            // ── Connection closed ───────────────────────────────────
 
             if (connection === "close") {
                 this.isReconnecting = false;
@@ -763,9 +887,11 @@ class BotInstance {
                 );
 
                 if (statusCode === DisconnectReason.loggedOut) {
+                    // Clear credentials only when WhatsApp reports logout.
                     try {
-                        const { clearDatabaseAuthState } =
-                            require("../firebox/dbAuth");
+                        const {
+                            clearDatabaseAuthState
+                        } = require("../firebox/dbAuth");
 
                         await clearDatabaseAuthState(
                             `saas_${this.userId}`
@@ -780,24 +906,26 @@ class BotInstance {
                     this.sessionId = null;
                     this.sessionIdInvalid = true;
                     this.sessionInvalidated = true;
-
                     this.wipeSession();
                     this.hasWipedSessionOnStartup = false;
 
                     console.log(
-                        `[${this.userId}] Auth cleared. Waiting for pairing.`
+                        `[${this.userId}] Auth state cleared. Waiting for new pairing.`
                     );
 
                     return;
                 }
 
                 if (this.pairingRestartInProgress) {
-                    this.pairingRestartInProgress = false;
-
-                    setTimeout(
-                        () => this._connectionLogic(),
-                        2000
-                    );
+                    setTimeout(() => {
+                        if (!this.stopped) {
+                            this._connectionLogic().catch(error => {
+                                if (this.pairingCodeReject) {
+                                    this.pairingCodeReject(error);
+                                }
+                            });
+                        }
+                    }, 2000);
 
                     return;
                 }
@@ -825,52 +953,70 @@ class BotInstance {
                         this.sessionId = null;
                     }
 
-                    this.wipeSession();
+                    // Avoid deleting a valid session solely because of
+                    // a transient connection problem.
+                    if (statusCode === DisconnectReason.loggedOut) {
+                        this.wipeSession();
+                    }
 
-                    setTimeout(
-                        () => this._connectionLogic(),
-                        5000
-                    );
+                    setTimeout(() => {
+                        if (!this.stopped) {
+                            this._connectionLogic().catch(error => {
+                                console.error(
+                                    `[${this.userId}] Reconnect failed:`,
+                                    error.message
+                                );
+                            });
+                        }
+                    }, 5000);
                 } else {
-                    setTimeout(
-                        () => this._connectionLogic(),
-                        10000
-                    );
+                    setTimeout(() => {
+                        if (!this.stopped) {
+                            this._connectionLogic().catch(error => {
+                                console.error(
+                                    `[${this.userId}] Reconnect failed:`,
+                                    error.message
+                                );
+                            });
+                        }
+                    }, 10000);
                 }
             }
         });
 
-        // ── Message events + VV2 emoji trigger ──────────────────────────
+        // ── Incoming messages ───────────────────────────────────────
 
         sock.ev.on("messages.upsert", async upsert => {
             if (upsert.type !== "notify") return;
 
-            const m = upsert.messages?.[0];
+            const message = upsert.messages?.[0];
 
-            if (!m?.message) return;
+            if (!message?.message) return;
 
-            const msgTime = m.messageTimestamp
-                ? Number(m.messageTimestamp)
+            const messageTime = message.messageTimestamp
+                ? Number(message.messageTimestamp)
                 : 0;
 
             if (
                 this.botStartTime &&
-                msgTime &&
-                msgTime < this.botStartTime
+                messageTime &&
+                messageTime < this.botStartTime
             ) {
                 return;
             }
 
-            // IMPORTANT: run all per-user operations in the user's context.
             await this._runInContext(async () => {
+                // VV2 reactions are independently configurable per user.
                 try {
                     const vv2Enabled =
                         this.store.get("vv2_enabled", false) === true;
 
                     if (vv2Enabled) {
-                        await handleVV2EmojiReply(sock, m, {
-                            enabled: true
-                        });
+                        await handleVV2EmojiReply(
+                            sock,
+                            message,
+                            { enabled: true }
+                        );
                     }
                 } catch (error) {
                     console.error(
@@ -880,7 +1026,7 @@ class BotInstance {
                 }
 
                 try {
-                    await handleAutomation(sock, m);
+                    await handleAutomation(sock, message);
                 } catch (error) {
                     console.error(
                         `[${this.userId}] Automation error:`,
@@ -899,30 +1045,38 @@ class BotInstance {
             });
         });
 
-        // ── Message delete/update events ────────────────────────────────
+        // ── Message updates / anti-delete ──────────────────────────
 
         sock.ev.on("messages.update", async update => {
-            this._runInContext(() =>
-                handleMessageDelete(sock, update)
-            );
+            try {
+                await this._runInContext(async () => {
+                    await handleMessageDelete(sock, update);
+                });
+            } catch (error) {
+                console.error(
+                    `[${this.userId}] Message update error:`,
+                    error.message
+                );
+            }
         });
 
-        // ── Anti-call ───────────────────────────────────────────────────
+        // ── Anti-call ───────────────────────────────────────────────
 
         sock.ev.on("call", async calls => {
             const settings = this.settingsManager.get();
 
-            if (settings.antiCall) {
-                for (const call of calls) {
-                    if (call.status === "offer") {
-                        await sock.rejectCall(call.id, call.from)
-                            .catch(() => {});
-                    }
+            if (!settings.antiCall) return;
+
+            for (const call of calls) {
+                if (call.status === "offer") {
+                    await sock
+                        .rejectCall(call.id, call.from)
+                        .catch(() => {});
                 }
             }
         });
 
-        // ── Group welcome/goodbye events ────────────────────────────────
+        // ── Group welcome / goodbye events ──────────────────────────
 
         sock.ev.on("group-participants.update", async update => {
             try {
@@ -940,7 +1094,8 @@ class BotInstance {
 
                 if (!isActive) return;
 
-                const metadata = await sock.groupMetadata(id)
+                const metadata = await sock
+                    .groupMetadata(id)
                     .catch(() => null);
 
                 if (!metadata) return;
@@ -954,44 +1109,46 @@ class BotInstance {
                         `@${participant.split("@")[0]}`;
 
                     if (action === "add") {
-                        const template =
-                            this.store.get(`welcome_msg_${id}`, null) ||
-                            settings.welcomeMsg;
+                        const template = this.store.get(
+                            `welcome_msg_${id}`,
+                            null
+                        ) || settings.welcomeMsg;
 
-                        const message = template
+                        const messageText = String(template || "")
                             .replace(/@user/g, userMention)
                             .replace(/@group/g, groupName)
-                            .replace(/{count}/g, memberCount);
+                            .replace(/{count}/g, String(memberCount));
 
                         await sock.sendMessage(id, {
-                            text: message,
+                            text: messageText,
                             mentions: [participant]
                         }).catch(() => {});
                     } else if (action === "remove") {
-                        const template =
-                            this.store.get(`goodbye_msg_${id}`, null) ||
-                            settings.goodbyeMsg;
+                        const template = this.store.get(
+                            `goodbye_msg_${id}`,
+                            null
+                        ) || settings.goodbyeMsg;
 
-                        const message = template
+                        const messageText = String(template || "")
                             .replace(/@user/g, userMention)
                             .replace(/@group/g, groupName);
 
                         await sock.sendMessage(id, {
-                            text: message,
+                            text: messageText,
                             mentions: [participant]
                         }).catch(() => {});
                     }
                 }
             } catch (error) {
                 console.error(
-                    `[${this.userId}] group-participants error:`,
+                    `[${this.userId}] Group participants error:`,
                     error.message
                 );
             }
         });
     }
 
-    // ── Clear timers ────────────────────────────────────────────────────
+    // ── Cleanup timers ──────────────────────────────────────────────
 
     _clearTimers() {
         if (this.alwaysOnlineInterval) {
