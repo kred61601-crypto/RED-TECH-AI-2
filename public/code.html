@@ -1,0 +1,815 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title> 𝐑𝐄𝐃𝐓𝐄𝐂𝐇-𝐀𝐈 // Pair Code</title>
+
+<style>
+:root{
+--red:#ff2e63;
+--red2:#ff0844;
+--purple:#8b5cf6;
+--purple2:#6c63ff;
+--bg:#10051b;
+--card:#1b1025e8;
+--line:rgba(168,85,247,.3);
+--text:#ffe9ef;
+--muted:#c0a6d0
+}
+*{box-sizing:border-box;margin:0;padding:0}
+
+body{
+min-height:100vh;
+background:var(--bg);
+background-image:
+radial-gradient(at 15% 15%,rgba(255,46,99,.35) 0%,transparent 45%),
+radial-gradient(at 90% 20%,rgba(139,92,246,.4) 0%,transparent 48%),
+radial-gradient(at 80% 90%,rgba(108,99,255,.3) 0%,transparent 48%),
+radial-gradient(at 10% 85%,rgba(255,8,68,.18) 0%,transparent 45%);
+color:var(--text);
+font-family:system-ui;
+display:flex;
+justify-content:center;
+padding:20px
+}
+
+body::before{
+content:"";
+position:fixed;
+inset:0;
+background-image:
+linear-gradient(rgba(168,85,247,.045) 1px,transparent 1px),
+linear-gradient(90deg,rgba(255,46,99,.04) 1px,transparent 1px);
+background-size:36px 36px;
+pointer-events:none
+}
+
+.wrap{width:100%;max-width:440px;position:relative;z-index:1}
+
+.top{
+display:flex;
+justify-content:space-between;
+align-items:center;
+gap:10px;
+flex-wrap:wrap;
+background:rgba(255,255,255,.06);
+backdrop-filter:blur(20px);
+border:1px solid rgba(192,132,252,.2);
+border-radius:18px;
+padding:12px 14px;
+margin-bottom:18px
+}
+
+.brand{
+display:flex;
+gap:10px;
+align-items:center;
+color:var(--red);
+font-weight:900;
+letter-spacing:.12em;
+font-size:.8rem
+}
+
+.brand-mark{width:22px;height:28px;filter:drop-shadow(0 0 8px var(--red))}
+.brand-mark path:first-child{fill:var(--red)}
+.brand-mark path:last-child{fill:var(--purple)}
+
+.brand small{display:block;font-size:8px;margin-top:3px}
+
+.nav{
+display:flex;
+gap:6px;
+background:rgba(139,92,246,.14);
+border:1px solid rgba(168,85,247,.3);
+border-radius:999px;
+padding:5px;
+backdrop-filter:blur(10px)
+}
+
+.nav a{
+color:#d9c4e9;
+text-decoration:none;
+font-size:11px;
+font-weight:800;
+letter-spacing:.08em;
+padding:9px 14px;
+border-radius:999px;
+transition:.2s;
+border:1px solid transparent
+}
+
+.nav a:hover{color:white;background:rgba(255,46,99,.25)}
+
+.nav a.active{
+background:linear-gradient(90deg,var(--red),var(--purple));
+color:white;
+box-shadow:0 4px 18px rgba(168,85,247,.4);
+border-color:rgba(255,255,255,.15)
+}
+
+.tag{text-align:center;color:#d8a5ff;font-size:10px;letter-spacing:.22em;font-weight:800}
+
+h1{text-align:center;font-size:1.9rem;font-weight:900;line-height:1.1;margin-top:10px}
+h1 span{
+background:linear-gradient(90deg,var(--red),#c084fc,var(--purple2));
+-webkit-background-clip:text;
+-webkit-text-fill-color:transparent
+}
+
+.intro{text-align:center;color:var(--muted);font-size:.85rem;line-height:1.6;margin-top:10px}
+
+.card{
+margin-top:18px;
+background:var(--card);
+backdrop-filter:blur(20px);
+border:1px solid var(--line);
+border-radius:28px;
+padding:24px;
+box-shadow:0 20px 60px rgba(0,0,0,.5),0 0 0 1px rgba(168,85,247,.1) inset
+}
+
+.logo-wrap{display:flex;justify-content:center;margin:8px 0 18px}
+
+.logo{
+width:88px;height:88px;
+border-radius:50%;
+background:linear-gradient(135deg,var(--red),var(--purple));
+display:flex;
+align-items:center;
+justify-content:center;
+font-size:36px;
+box-shadow:0 0 0 10px rgba(255,46,99,.15),0 0 0 20px rgba(139,92,246,.1),0 0 40px rgba(168,85,247,.5);
+animation:pulseRed 2.2s infinite
+}
+
+@keyframes pulseRed{
+0%{box-shadow:0 0 0 10px rgba(255,46,99,.18),0 0 0 20px rgba(139,92,246,.08),0 0 40px rgba(255,46,99,.5)}
+50%{box-shadow:0 0 0 14px rgba(255,46,99,.12),0 0 0 28px rgba(139,92,246,.05),0 0 55px rgba(168,85,247,.7)}
+100%{box-shadow:0 0 0 10px rgba(255,46,99,.18),0 0 0 20px rgba(139,92,246,.08),0 0 40px rgba(255,46,99,.5)}
+}
+
+.label{
+display:block;
+margin-bottom:8px;
+color:#d8a5ff;
+font-size:10px;
+letter-spacing:.12em;
+font-weight:800
+}
+
+.input{
+display:flex;
+background:#160e20;
+border:1px solid var(--line);
+border-radius:14px;
+overflow:hidden
+}
+
+.input input{
+width:100%;
+border:0;
+outline:0;
+padding:14px 16px;
+background:transparent;
+color:#fff;
+font:inherit;
+text-align:center;
+letter-spacing:.1em;
+font-weight:700
+}
+
+.input input:focus{box-shadow:inset 0 0 0 1px var(--purple)}
+
+button{
+width:100%;
+margin-top:14px;
+border:0;
+border-radius:14px;
+padding:15px;
+color:#fff;
+background:linear-gradient(135deg,var(--red),var(--purple));
+font:800 12px system-ui;
+letter-spacing:.08em;
+cursor:pointer;
+box-shadow:0 0 24px rgba(139,92,246,.25);
+transition:.2s
+}
+
+button:hover{transform:translateY(-1px);box-shadow:0 0 32px rgba(168,85,247,.5)}
+button:disabled{opacity:.5;cursor:wait;transform:none}
+
+.recovery{
+display:block;
+text-align:center;
+margin-top:12px;
+color:#d8a5ff;
+font-size:10px;
+font-weight:800;
+letter-spacing:.05em;
+text-decoration:none
+}
+
+.recovery:hover{color:#fff}
+
+.result{
+margin-top:14px;
+padding:16px;
+border-radius:16px;
+border:1px dashed var(--purple);
+background:rgba(139,92,246,.09);
+animation:reveal .4s ease both
+}
+
+.result small{
+color:#d8a5ff;
+font-size:9px;
+letter-spacing:.15em;
+font-weight:800;
+display:block;
+text-align:center
+}
+
+.code{
+display:block;
+margin-top:10px;
+color:#fff;
+font-size:32px;
+letter-spacing:.18em;
+font-weight:900;
+text-align:center;
+word-break:break-all;
+text-shadow:0 0 20px var(--purple)
+}
+
+.copy{margin-top:12px;background:transparent;border:1px solid var(--purple);color:#d8a5ff}
+.copy:hover{background:var(--purple);color:#fff}
+
+.plans{margin-top:18px;padding-top:16px;border-top:1px solid var(--line)}
+
+.plans-head{
+display:flex;
+justify-content:space-between;
+font-size:9px;
+letter-spacing:.12em;
+font-weight:800;
+color:#d8a5ff
+}
+
+.payment-state{color:var(--muted);font-size:9px}
+
+.plan-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:10px}
+
+.plan{
+padding:12px;
+border-radius:12px;
+border:1px solid var(--line);
+background:#160e20;
+text-align:center
+}
+
+.plan strong{display:block;color:#fff;font-size:14px}
+.plan span{color:var(--muted);font-size:9px;margin-top:4px;display:block}
+
+.plan button{
+margin-top:8px;
+padding:8px;
+font-size:9px;
+background:transparent;
+border:1px solid var(--line);
+color:var(--muted);
+box-shadow:none;
+cursor:not-allowed
+}
+
+.hint{margin-top:12px;color:var(--muted);font-size:11px;line-height:1.5;text-align:center}
+
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:18px 0}
+
+.stat{
+background:var(--card);
+border:1px solid var(--line);
+border-radius:14px;
+padding:12px;
+text-align:center
+}
+
+.stat b{display:block;color:#d8a5ff;font-size:9px}
+.stat strong{display:block;font-size:16px;margin-top:4px}
+
+.footer{
+margin:22px 0 10px;
+padding:16px;
+border:1px solid var(--line);
+display:flex;
+gap:12px;
+align-items:center;
+background:var(--card);
+border-radius:14px
+}
+
+.footer a{color:#25D366;text-decoration:none;font-weight:700}
+
+.toast{
+position:fixed;
+right:16px;
+bottom:16px;
+display:none;
+max-width:calc(100% - 32px);
+padding:12px 16px;
+border-radius:12px;
+border:1px solid var(--purple);
+background:#1f122b;
+color:#fff;
+font-size:12px;
+z-index:9
+}
+
+.toast.show{display:block}
+
+@keyframes reveal{
+from{opacity:0;transform:translateY(10px)}
+to{opacity:1;transform:none}
+}
+
+/* NEW WHATSAPP QR SCANNER SECTION */
+
+.qr-card{
+margin-top:18px;
+padding:22px;
+border-radius:24px;
+background:linear-gradient(145deg,rgba(139,92,246,.15),rgba(255,46,99,.08),rgba(20,8,34,.92));
+border:1px solid rgba(192,132,252,.35);
+box-shadow:0 15px 45px rgba(0,0,0,.3),0 0 24px rgba(139,92,246,.1);
+text-align:center
+}
+
+.qr-title{
+font-size:17px;
+font-weight:900;
+background:linear-gradient(90deg,#ff2e63,#d8a5ff,#8b5cf6);
+-webkit-background-clip:text;
+-webkit-text-fill-color:transparent
+}
+
+.qr-description{
+font-size:11px;
+line-height:1.7;
+color:var(--muted);
+margin-top:8px
+}
+
+.qr-frame{
+width:100%;
+max-width:260px;
+min-height:260px;
+margin:18px auto 12px;
+padding:14px;
+display:flex;
+align-items:center;
+justify-content:center;
+background:#fff;
+border:3px solid #c084fc;
+border-radius:18px;
+box-shadow:0 0 25px rgba(139,92,246,.3);
+overflow:hidden
+}
+
+#qr-image{
+display:block;
+width:100%;
+max-width:230px;
+height:auto;
+image-rendering:auto
+}
+
+.qr-placeholder{
+color:#675477;
+font-size:12px;
+line-height:1.7;
+padding:18px
+}
+
+.qr-status{
+font-size:10px;
+font-weight:800;
+letter-spacing:.08em;
+color:#d8a5ff;
+margin-top:10px;
+overflow-wrap:anywhere
+}
+
+.qr-button{
+background:linear-gradient(135deg,#8b5cf6,#ff2e63);
+box-shadow:0 0 22px rgba(139,92,246,.25)
+}
+
+.qr-instructions{
+margin-top:15px;
+padding:13px;
+border-radius:12px;
+background:rgba(139,92,246,.09);
+border:1px solid rgba(168,85,247,.18);
+text-align:left;
+font-size:11px;
+color:#e5d5f5;
+line-height:1.9
+}
+
+.qr-instructions strong{color:#d8a5ff}
+
+.qr-note{
+margin-top:12px;
+font-size:10px;
+color:var(--muted);
+line-height:1.6
+}
+
+@media(max-width:380px){
+body{padding:12px}
+.top{justify-content:center}
+.card{padding:18px}
+.plan-grid{gap:5px}
+.plan{padding:9px 5px}
+.plan strong{font-size:12px}
+.qr-card{padding:16px}
+h1{font-size:1.65rem}
+}
+</style>
+</head>
+
+<body>
+<div class="wrap">
+
+<header class="top">
+<div class="brand">
+<svg class="brand-mark" viewBox="0 0 24 30">
+<path d="M12 1C13 7 20 9 20 17a8 8 0 0 1-16 0c0-4 2-7 5-10 0 4 2 5 3 6 2-3 1-7 0-12Z"/>
+<path d="M12 13c3 3 4 5 4 7a4 4 0 0 1-8 0c0-2 1-4 4-7Z"/>
+</svg>
+<span>// REDTECH<small>PAIRING TERMINAL</small></span>
+</div>
+
+<nav class="nav">
+<a href="/token">TOKEN</a>
+<a href="/code" class="active">PAIR CODE</a>
+</nav>
+</header>
+
+<main>
+<div class="tag">[ NODE 02 / LINK ]</div>
+<h1>Generate a <span>pairing code.</span></h1>
+<p class="intro">Enter your saved Redtech token. Reusable, request new code anytime.</p>
+
+<section class="card">
+
+<div class="logo-wrap">
+<div class="logo">🔑</div>
+</div>
+
+<label class="label" for="token">REDTECH TOKEN // SAVED SECRET</label>
+
+<div class="input">
+<input id="token" placeholder="REDTECH-XXXX-XXXX" autocomplete="off">
+</div>
+
+<button id="generate">GENERATE PAIR CODE //→</button>
+
+<a class="recovery" href="https://wa.me/254726476468?text=Hello%20Redtech%20Admin%2C%20I%20forgot%20my%20token." target="_blank" rel="noopener">FORGOT TOKEN? CHAT ADMIN →</a>
+
+<div id="result" class="result" hidden>
+<small>WHATSAPP PAIRING CODE</small>
+<strong id="code" class="code"></strong>
+<button id="copy" class="copy">📋 COPY CODE</button>
+<p class="hint">In WhatsApp: Settings → Linked Devices → Link a Device → Link with phone number instead.</p>
+</div>
+
+<div class="plans">
+<div class="plans-head">
+<small>TOKEN ACCESS PLANS</small>
+<span id="payment-state" class="payment-state">CHECKING...</span>
+</div>
+
+<div class="plan-grid">
+<div class="plan">
+<strong>KSh 29</strong>
+<span>7 DAYS</span>
+<button disabled>OFFLINE</button>
+</div>
+<div class="plan">
+<strong>KSh 49</strong>
+<span>14 DAYS</span>
+<button disabled>OFFLINE</button>
+</div>
+<div class="plan">
+<strong>KSh 99</strong>
+<span>30 DAYS</span>
+<button disabled>OFFLINE</button>
+</div>
+</div>
+</div>
+</section>
+
+<!-- NEW: WHATSAPP QR CODE SCANNER -->
+
+<section class="qr-card">
+<h2 class="qr-title">📲 WHATSAPP QR SCANNER</h2>
+
+<p class="qr-description">
+Link your WhatsApp account by scanning a live QR code.
+Use this option instead of entering a pairing code.
+</p>
+
+<div class="qr-frame">
+<div id="qr-placeholder" class="qr-placeholder">
+<div style="font-size:45px;margin-bottom:10px">▦</div>
+<strong>YOUR QR CODE</strong>
+<p>Enter your Redtech token below and request a QR code.</p>
+</div>
+<img id="qr-image" alt="WhatsApp linking QR code" hidden>
+</div>
+
+<div id="qr-status" class="qr-status" role="status" aria-live="polite">
+● WAITING FOR REQUEST
+</div>
+
+<button id="generate-qr" class="qr-button">
+📲 GENERATE WHATSAPP QR
+</button>
+
+<button id="refresh-qr" class="copy" hidden>
+🔄 REFRESH QR CODE
+</button>
+
+<div class="qr-instructions">
+<strong>HOW TO SCAN</strong><br>
+1. Open WhatsApp on your phone.<br>
+2. Go to <strong>Settings → Linked Devices</strong>.<br>
+3. Tap <strong>Link a Device</strong>.<br>
+4. Scan the QR code shown above.<br>
+5. Keep this page open while linking.
+</div>
+
+<p class="qr-note">
+QR codes expire. If the code expires, request a fresh one.
+Never share your QR code or pairing code with another person.
+</p>
+</section>
+
+<div class="stats">
+<div class="stat"><b>ACTIVE PAIRS</b><strong>8.2K</strong></div>
+<div class="stat"><b>SUCCESS</b><strong>98.7%</strong></div>
+<div class="stat"><b>AVG TIME</b><strong>2.1s</strong></div>
+</div>
+
+<div class="footer">
+<svg viewBox="0 0 24 24" width="32" height="32" fill="#25D366">
+<path d="M12 0C5.37 0 0 5.37 0 12c0 2.11.55 4.11 1.6 5.85L0 24l6.3-1.65A11.9 11.9 0 0012 24c6.63 0 12-5.37 12-12S18.63 0 12 0z"/>
+</svg>
+<div>
+<div style="font-size:12px">Join our Community</div>
+<a href="https://whatsapp.com/channel/0029Vb9AwScF6sn47ClubG1Z" target="_blank" rel="noopener">WhatsApp Channel →</a>
+</div>
+</div>
+
+<div style="text-align:center;color:var(--muted);font-size:10px;padding:10px 0 20px">
+© 2026 Redtech AI. All rights reserved.
+</div>
+</main>
+</div>
+
+<div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+<script>
+const $ = s => document.querySelector(s);
+
+function toast(message){
+  $("#toast").textContent = message;
+  $("#toast").classList.add("show");
+  setTimeout(() => $("#toast").classList.remove("show"), 3500);
+}
+
+async function api(url, options = {}){
+  const response = await fetch(url, {
+    ...options,
+    headers: {
+      "Content-Type": "application/json",
+      ...(options.headers || {})
+    }
+  });
+
+  const data = await response.json().catch(() => ({}));
+
+  if (!response.ok) {
+    throw new Error(data.error || "Request failed");
+  }
+
+  return data;
+}
+
+/* ORIGINAL PAIRING CODE FUNCTION */
+
+$("#generate").onclick = async () => {
+  const token = $("#token").value.trim();
+
+  if (!token) return toast("Enter your token.");
+
+  const button = $("#generate");
+  button.disabled = true;
+  button.textContent = "REQUESTING //…";
+
+  try {
+    const data = await api("/api/bot/token/pair-code", {
+      method: "POST",
+      body: JSON.stringify({ token })
+    });
+
+    if (!data.code) {
+      throw new Error("No pairing code was returned by the server.");
+    }
+
+    $("#code").textContent = data.code;
+    $("#result").hidden = false;
+    toast("Code generated.");
+  } catch (error) {
+    toast(error.message);
+  } finally {
+    button.disabled = false;
+    button.textContent = "GENERATE PAIR CODE //→";
+  }
+};
+
+$("#copy").onclick = async () => {
+  try {
+    await navigator.clipboard.writeText($("#code").textContent);
+    const button = $("#copy");
+    const oldText = button.textContent;
+    button.textContent = "✅ COPIED!";
+    toast("Copied.");
+    setTimeout(() => button.textContent = oldText, 2000);
+  } catch {
+    toast("Copy failed. Please copy the code manually.");
+  }
+};
+
+/*
+ * NEW QR FUNCTION
+ *
+ * Expected backend endpoint:
+ * POST /api/bot/token/qr-code
+ * Body: { "token": "YOUR_TOKEN" }
+ *
+ * Expected JSON response:
+ * { "qr": "LIVE_WHATSAPP_QR_STRING" }
+ *
+ * The qr value must be the actual QR payload from the WhatsApp
+ * connection, not a made-up string or the pairing code.
+ */
+
+let qrRequestInProgress = false;
+
+function setQRStatus(message){
+  $("#qr-status").textContent = message;
+}
+
+function clearQR(){
+  $("#qr-image").hidden = true;
+  $("#qr-image").removeAttribute("src");
+  $("#qr-placeholder").hidden = false;
+}
+
+function displayQR(data){
+  /*
+   * The server may return an already-generated image data URL
+   * or a QR payload that must be rendered into a QR image.
+   */
+  const qrValue = data.qr || data.qrCode || data.qrcode;
+  const imageValue = data.qrImage || data.dataUrl || data.image;
+
+  if (imageValue && typeof imageValue === "string" &&
+      /^data:image\/(png|jpeg|webp);base64,/i.test(imageValue)) {
+    $("#qr-image").src = imageValue;
+    $("#qr-image").hidden = false;
+    $("#qr-placeholder").hidden = true;
+    return true;
+  }
+
+  if (qrValue && typeof qrValue === "string" &&
+      /^data:image\/(png|jpeg|webp);base64,/i.test(qrValue)) {
+    $("#qr-image").src = qrValue;
+    $("#qr-image").hidden = false;
+    $("#qr-placeholder").hidden = true;
+    return true;
+  }
+
+  /*
+   * A raw WhatsApp QR payload requires a QR renderer.
+   * The server can alternatively return a generated image.
+   */
+  if (typeof qrValue === "string" && qrValue.length > 0) {
+    if (typeof window.QRCode === "undefined") {
+      throw new Error(
+        "QR payload received, but the QR renderer is unavailable. " +
+        "Configure a QR image response or load a QR rendering library."
+      );
+    }
+
+    const canvas = document.createElement("canvas");
+
+    window.QRCode.toCanvas(canvas, qrValue, {
+      width: 230,
+      margin: 2,
+      errorCorrectionLevel: "M"
+    }, error => {
+      if (error) {
+        setQRStatus("● COULD NOT RENDER QR");
+        toast("Could not display the QR code.");
+        return;
+      }
+
+      $("#qr-image").src = canvas.toDataURL("image/png");
+      $("#qr-image").hidden = false;
+      $("#qr-placeholder").hidden = true;
+    });
+
+    return true;
+  }
+
+  return false;
+}
+
+async function requestQR(){
+  const token = $("#token").value.trim();
+
+  if (!token) {
+    toast("Enter your Redtech token first.");
+    $("#token").focus();
+    return;
+  }
+
+  if (qrRequestInProgress) return;
+
+  qrRequestInProgress = true;
+
+  const generateButton = $("#generate-qr");
+  const refreshButton = $("#refresh-qr");
+
+  generateButton.disabled = true;
+  refreshButton.disabled = true;
+  generateButton.textContent = "CONNECTING TO WHATSAPP...";
+  setQRStatus("● REQUESTING LIVE QR CODE");
+
+  try {
+    /*
+     * This route must be implemented by your existing backend.
+     * It should return the real QR from the WhatsApp socket.
+     */
+    const data = await api("/api/bot/token/qr-code", {
+      method: "POST",
+      body: JSON.stringify({ token })
+    });
+
+    const displayed = displayQR(data);
+
+    if (!displayed) {
+      throw new Error(
+        data.error ||
+        "The server did not return a QR code. Check your backend QR endpoint."
+      );
+    }
+
+    setQRStatus("● QR RECEIVED — SCAN WITH WHATSAPP");
+    refreshButton.hidden = false;
+    toast("QR code received. Scan it using WhatsApp Linked Devices.");
+  } catch (error) {
+    setQRStatus("● QR REQUEST FAILED");
+    toast(error.message);
+  } finally {
+    qrRequestInProgress = false;
+    generateButton.disabled = false;
+    refreshButton.disabled = false;
+    generateButton.textContent = "📲 GENERATE WHATSAPP QR";
+  }
+}
+
+$("#generate-qr").addEventListener("click", requestQR);
+$("#refresh-qr").addEventListener("click", requestQR);
+
+/* ORIGINAL PAYMENT STATUS FUNCTION */
+
+fetch("/api/bot/payment-config")
+  .then(response => response.json())
+  .then(config => {
+    $("#payment-state").textContent =
+      config.enabled ? "MPESA READY" : "COMING SOON";
+  })
+  .catch(() => {
+    $("#payment-state").textContent = "OFFLINE";
+  });
+</script>
+
+<!-- QR renderer for raw WhatsApp QR payloads -->
+<script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.4/build/qrcode.min.js"></script>
+
+</body>
+  </html>

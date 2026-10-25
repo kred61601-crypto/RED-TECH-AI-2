@@ -1,0 +1,736 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Firebox Bot — Setup</title>
+  <style>
+    :root {
+      --fire1: #ff6b00;
+      --fire2: #ff9a00;
+      --bg: #0d0d0d;
+      --surface: #161616;
+      --surface2: #1e1e1e;
+      --border: #2a2a2a;
+      --text: #f0f0f0;
+      --muted: #888;
+      --success: #22c55e;
+      --error: #ef4444;
+      --radius: 12px;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 40px 16px 80px;
+    }
+
+    /* Header */
+    header {
+      display: flex; flex-direction: column; align-items: center; gap: 10px;
+      margin-bottom: 32px;
+    }
+    .logo-wrap {
+      width: 64px; height: 64px;
+      background: linear-gradient(135deg, var(--fire1), var(--fire2));
+      border-radius: 18px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 32px;
+      box-shadow: 0 0 28px rgba(255,107,0,0.35);
+    }
+    header h1 {
+      font-size: 1.6rem; font-weight: 700;
+      background: linear-gradient(90deg, var(--fire1), var(--fire2));
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    }
+    header p { color: var(--muted); font-size: 0.9rem; text-align: center; }
+
+    /* Status chip */
+    #status-chip {
+      display: inline-flex; align-items: center; gap: 7px;
+      padding: 5px 16px; border-radius: 999px;
+      font-size: 0.8rem; font-weight: 600;
+      background: var(--surface2); border: 1px solid var(--border);
+      margin-bottom: 32px; transition: all 0.3s;
+    }
+    #status-chip .dot {
+      width: 8px; height: 8px; border-radius: 50%;
+      background: var(--muted); transition: background 0.3s;
+    }
+    #status-chip.online  { border-color: #22c55e55; background: #0f2d1a; }
+    #status-chip.online  .dot { background: var(--success); box-shadow: 0 0 6px var(--success); }
+    #status-chip.offline { border-color: #ef444455; background: #2d0f0f; }
+    #status-chip.offline .dot { background: var(--error); }
+    #status-chip.connecting { border-color: #f59e0b55; background: #2d1f0f; }
+    #status-chip.connecting .dot { background: #f59e0b; animation: pulse 1s infinite; }
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+    /* Step tracker */
+    .steps-track {
+      display: flex; align-items: center;
+      margin-bottom: 28px; width: 100%; max-width: 460px;
+    }
+    .step-node { display: flex; flex-direction: column; align-items: center; gap: 6px; flex: 1; }
+    .step-circle {
+      width: 32px; height: 32px; border-radius: 50%;
+      border: 2px solid var(--border); background: var(--surface2);
+      color: var(--muted);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.8rem; font-weight: 700;
+      transition: all 0.3s; position: relative; z-index: 1;
+    }
+    .step-circle.active {
+      border-color: var(--fire1);
+      background: linear-gradient(135deg, var(--fire1), var(--fire2));
+      color: #fff; box-shadow: 0 0 12px rgba(255,107,0,0.4);
+    }
+    .step-circle.done { border-color: var(--success); background: var(--success); color: #fff; }
+    .step-label { font-size: 0.7rem; color: var(--muted); text-align: center; white-space: nowrap; transition: color 0.3s; }
+    .step-node.active .step-label { color: var(--fire2); }
+    .step-node.done  .step-label  { color: var(--success); }
+    .step-line { flex: 1; height: 2px; background: var(--border); margin-bottom: 22px; transition: background 0.4s; }
+    .step-line.done { background: var(--success); }
+
+    /* Card */
+    .card {
+      width: 100%; max-width: 460px;
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 28px;
+      display: none;
+    }
+    .card.visible { display: block; }
+    .card + .card { margin-top: 16px; }
+    .card h2 { font-size: 1rem; font-weight: 600; margin-bottom: 18px; display: flex; align-items: center; gap: 8px; }
+
+    /* Method tabs */
+    .method-tabs {
+      display: flex; gap: 0; margin-bottom: 22px;
+      border: 1px solid var(--border); border-radius: 8px; overflow: hidden;
+    }
+    .method-tab {
+      flex: 1; padding: 9px 12px; font-size: 0.85rem; font-weight: 500;
+      background: none; border: none; color: var(--muted); cursor: pointer;
+      transition: background 0.2s, color 0.2s;
+    }
+    .method-tab:first-child { border-right: 1px solid var(--border); }
+    .method-tab.active { background: var(--surface2); color: var(--text); }
+    .method-pane { display: none; }
+    .method-pane.visible { display: block; }
+
+    /* Form */
+    label { display: block; font-size: 0.82rem; color: var(--muted); margin-bottom: 6px; }
+    .input-row { display: flex; gap: 8px; }
+    .input-row input {
+      flex: 1; background: var(--surface2); border: 1px solid var(--border);
+      border-radius: 8px; color: var(--text); padding: 11px 14px;
+      font-size: 1rem; outline: none; transition: border-color 0.2s;
+    }
+    .input-row input:focus { border-color: var(--fire1); }
+    .input-row input::placeholder { color: var(--muted); }
+
+    .btn-primary {
+      background: linear-gradient(135deg, var(--fire1), var(--fire2));
+      color: #fff; border: none; border-radius: 8px;
+      padding: 11px 20px; font-size: 0.95rem; font-weight: 600;
+      cursor: pointer; white-space: nowrap; transition: opacity 0.2s, transform 0.1s;
+    }
+    .btn-primary:hover { opacity: 0.9; }
+    .btn-primary:active { transform: scale(0.97); }
+    .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+    .btn-ghost {
+      background: var(--surface); border: 1px solid var(--border); color: var(--text);
+      border-radius: 8px; padding: 9px 18px; font-size: 0.88rem; font-weight: 500;
+      cursor: pointer; transition: border-color 0.2s, background 0.2s; white-space: nowrap;
+    }
+    .btn-ghost:hover { border-color: var(--fire1); background: var(--surface2); }
+    .btn-ghost.copied { border-color: var(--success); color: var(--success); }
+
+    .hint { font-size: 0.78rem; color: var(--muted); margin-top: 8px; }
+
+    /* Alerts */
+    .error-box {
+      background: #2d0f0f; border: 1px solid #ef444455;
+      border-radius: 8px; padding: 12px 14px; color: #f87171;
+      font-size: 0.88rem; display: none; margin-top: 14px;
+    }
+    .already-box {
+      background: #0f2d1a; border: 1px solid #22c55e55;
+      border-radius: 8px; padding: 14px 16px; font-size: 0.88rem;
+      color: #4ade80; text-align: center; display: none; margin-bottom: 16px;
+    }
+
+    /* Pairing code display */
+    .code-display {
+      background: var(--surface2); border: 1px solid var(--border);
+      border-radius: 10px; padding: 24px; text-align: center; margin-top: 18px;
+    }
+    .code-label { font-size: 0.75rem; color: var(--muted); margin-bottom: 10px; text-transform: uppercase; letter-spacing: 0.08em; }
+    #pair-code {
+      font-size: 2.6rem; font-weight: 800; letter-spacing: 0.3em;
+      background: linear-gradient(90deg, var(--fire1), var(--fire2));
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      font-variant-numeric: tabular-nums;
+    }
+
+    /* Countdown */
+    .countdown-wrap { margin-top: 10px; }
+    #countdown-bar-bg {
+      height: 4px; background: var(--border); border-radius: 2px; overflow: hidden; margin-bottom: 5px;
+    }
+    #countdown-bar { height: 100%; width: 100%; background: var(--fire2); border-radius: 2px; transition: width 1s linear, background 1s; }
+    #countdown-text { font-size: 0.75rem; color: var(--muted); }
+    #countdown-text.urgent { color: var(--error); }
+
+    .code-actions { display: flex; gap: 8px; justify-content: center; margin-top: 14px; flex-wrap: wrap; }
+
+    /* QR code */
+    .qr-wrap {
+      display: flex; flex-direction: column; align-items: center; gap: 14px;
+      padding: 20px 0;
+    }
+    #qr-img {
+      width: 220px; height: 220px; border-radius: 10px;
+      background: var(--surface2); border: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: center;
+    }
+    #qr-img img { width: 100%; height: 100%; border-radius: 10px; }
+    #qr-status { font-size: 0.82rem; color: var(--muted); text-align: center; }
+    #qr-refresh-btn { font-size: 0.82rem; }
+
+    /* How-to steps */
+    .how-steps { list-style: none; display: flex; flex-direction: column; gap: 12px; }
+    .how-steps li { display: flex; align-items: flex-start; gap: 12px; font-size: 0.88rem; color: var(--muted); }
+    .how-steps li .num {
+      min-width: 22px; height: 22px; border-radius: 50%;
+      background: linear-gradient(135deg, var(--fire1), var(--fire2));
+      color: #fff; display: flex; align-items: center; justify-content: center;
+      font-size: 0.72rem; font-weight: 700; flex-shrink: 0;
+    }
+    .how-steps li span { padding-top: 2px; line-height: 1.5; }
+
+    /* Waiting */
+    .waiting-box {
+      display: flex; align-items: center; gap: 12px;
+      background: #2d1f0f; border: 1px solid #f59e0b44;
+      border-radius: 8px; padding: 14px 16px;
+      margin-top: 18px; font-size: 0.88rem; color: #fbbf24;
+    }
+
+    /* Session ID */
+    .session-display {
+      background: var(--surface2); border: 1px solid var(--border);
+      border-radius: 10px; padding: 20px; margin-top: 4px;
+    }
+    .session-label { font-size: 0.75rem; color: var(--muted); margin-bottom: 10px; text-transform: uppercase; letter-spacing: 0.08em; }
+    #session-id-text {
+      font-family: "Courier New", monospace; font-size: 0.72rem; color: var(--fire2);
+      word-break: break-all; line-height: 1.5; max-height: 80px; overflow-y: auto;
+      background: #0d0d0d; border-radius: 6px; padding: 10px 12px;
+      border: 1px solid var(--border); margin-bottom: 12px; user-select: all;
+    }
+    .session-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+    .success-badge {
+      display: inline-flex; align-items: center; gap: 6px;
+      background: #0f2d1a; border: 1px solid #22c55e55; color: #4ade80;
+      border-radius: 999px; padding: 4px 12px; font-size: 0.78rem; font-weight: 600;
+      margin-bottom: 16px;
+    }
+    .warning-note {
+      font-size: 0.78rem; color: var(--muted); margin-top: 10px;
+      padding: 10px 12px; background: var(--surface2); border-radius: 6px;
+      border-left: 3px solid var(--fire1); line-height: 1.5;
+    }
+
+    /* Spinner */
+    .spinner {
+      display: inline-block; width: 14px; height: 14px;
+      border: 2px solid rgba(255,255,255,0.3); border-top-color: #fff;
+      border-radius: 50%; animation: spin 0.7s linear infinite;
+      vertical-align: middle; margin-right: 6px; flex-shrink: 0;
+    }
+    .spinner-amber { border-color: rgba(251,191,36,0.3); border-top-color: #fbbf24; }
+    .spinner-muted { border-color: rgba(136,136,136,0.3); border-top-color: var(--muted); }
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="logo-wrap">🔥</div>
+    <h1>Firebox Bot</h1>
+    <p>Connect your WhatsApp account in 3 steps</p>
+  </header>
+
+  <div id="status-chip">
+    <span class="dot"></span>
+    <span id="status-text">Checking…</span>
+  </div>
+
+  <!-- Step tracker -->
+  <div class="steps-track">
+    <div class="step-node active" id="sn1">
+      <div class="step-circle active" id="sc1">1</div>
+      <div class="step-label">Connect</div>
+    </div>
+    <div class="step-line" id="sl1"></div>
+    <div class="step-node" id="sn2">
+      <div class="step-circle" id="sc2">2</div>
+      <div class="step-label">Link Device</div>
+    </div>
+    <div class="step-line" id="sl2"></div>
+    <div class="step-node" id="sn3">
+      <div class="step-circle" id="sc3">3</div>
+      <div class="step-label">Session ID</div>
+    </div>
+  </div>
+
+  <!-- ── STEP 1: Connect ── -->
+  <div class="card visible" id="card-step1">
+    <h2><span>📱</span> Connect WhatsApp</h2>
+
+    <div id="already-connected" class="already-box">
+      ✅ Bot is already connected. Jump to <strong>Step 3</strong> to copy your Session ID.
+      <br><br>
+      <button class="btn-primary" onclick="nextStep(3)" style="font-size:0.85rem;padding:8px 16px;">Go to Session ID →</button>
+    </div>
+
+    <!-- Method selector -->
+    <div class="method-tabs">
+      <button class="method-tab active" id="tab-pair" onclick="switchMethod('pair')">📲 Pairing Code</button>
+      <button class="method-tab" id="tab-qr" onclick="switchMethod('qr')">🔳 QR Code</button>
+      <button class="method-tab" id="tab-restore" onclick="switchMethod('restore')" style="border-left:1px solid var(--border);">🔑 Restore Session</button>
+    </div>
+
+    <!-- Pairing Code pane -->
+    <div class="method-pane visible" id="pane-pair">
+      <label for="phone-input">WhatsApp Number (with country code, no + or spaces)</label>
+      <div class="input-row">
+        <input id="phone-input" type="tel" placeholder="e.g. 254712345678" autocomplete="tel" maxlength="20" />
+        <button class="btn-primary" id="pair-btn" onclick="requestCode()">Get Code</button>
+      </div>
+      <p class="hint">Digits only, starting with country code. Example: 254712345678</p>
+
+      <div id="pair-error" class="error-box"></div>
+
+      <div id="code-result" style="display:none;">
+        <div class="code-display">
+          <div class="code-label">Your Pairing Code — enter it quickly!</div>
+          <div id="pair-code">— — — —</div>
+          <div class="countdown-wrap">
+            <div id="countdown-bar-bg"><div id="countdown-bar"></div></div>
+            <div id="countdown-text">Expires in 160s</div>
+          </div>
+          <div class="code-actions">
+            <button class="btn-ghost" id="copy-code-btn" onclick="copyPairCode()">Copy Code</button>
+            <button class="btn-ghost" onclick="nextStep(2)">Next →</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- QR Code pane -->
+    <div class="method-pane" id="pane-qr">
+      <div class="qr-wrap">
+        <div id="qr-img"><span class="spinner spinner-muted" style="width:24px;height:24px;border-width:3px;margin:0;"></span></div>
+        <div id="qr-status">Loading QR code…</div>
+        <button class="btn-ghost" id="qr-refresh-btn" onclick="loadQR()">↻ Refresh QR</button>
+      </div>
+      <p class="hint" style="text-align:center;">Open WhatsApp → <strong>Linked Devices → Link a Device</strong> → scan this code</p>
+    </div>
+
+    <!-- Restore Session pane -->
+    <div class="method-pane" id="pane-restore">
+      <p style="font-size:0.85rem;color:var(--muted);margin-bottom:14px;line-height:1.6;">
+        Already have a <code style="color:var(--fire2)">FIREBOX~...</code> Session ID from a previous deployment? Paste it below to restore your WhatsApp session without scanning a QR code again.
+      </p>
+      <label for="restore-input">Session ID</label>
+      <textarea id="restore-input" rows="4"
+        placeholder="FIREBOX~eyJub2lzZUtleS..."
+        style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--text);padding:11px 14px;font-size:0.8rem;font-family:'Courier New',monospace;outline:none;resize:vertical;line-height:1.5;transition:border-color 0.2s;"
+        onfocus="this.style.borderColor='var(--fire1)'" onblur="this.style.borderColor='var(--border)'"></textarea>
+      <div style="margin-top:10px;">
+        <button class="btn-primary" id="restore-btn" onclick="restoreSession()">Restore &amp; Restart Bot</button>
+      </div>
+      <div id="restore-error" class="error-box"></div>
+      <div id="restore-success" style="display:none;margin-top:14px;background:#0f2d1a;border:1px solid #22c55e55;border-radius:8px;padding:14px 16px;font-size:0.88rem;color:#4ade80;"></div>
+      <p class="hint" style="margin-top:12px;">The bot will restart automatically after restoring. The page will reload once it's back online.</p>
+    </div>
+  </div>
+
+  <!-- ── STEP 2: Link on WhatsApp ── -->
+  <div class="card" id="card-step2">
+    <h2><span>📋</span> Link on WhatsApp</h2>
+    <ol class="how-steps">
+      <li><span class="num">1</span><span>Open WhatsApp on your phone and tap <strong>⋮ Menu → Linked Devices</strong>.</span></li>
+      <li><span class="num">2</span><span>Tap <strong>Link a Device</strong>, then tap <strong>"Link with phone number instead"</strong>.</span></li>
+      <li><span class="num">3</span><span>Enter the 8-digit code shown in Step 1 — <strong>do it within 160 seconds</strong> of generating it.</span></li>
+      <li><span class="num">4</span><span>The bot will connect automatically once WhatsApp confirms the link.</span></li>
+    </ol>
+    <div class="waiting-box" id="waiting-box" style="display:none;">
+      <span class="spinner spinner-amber"></span>
+      <span>Waiting for WhatsApp to confirm…</span>
+    </div>
+    <div style="display:flex; gap:8px; margin-top:20px; flex-wrap:wrap;">
+      <button class="btn-ghost" onclick="nextStep(1)">← Back</button>
+      <button class="btn-primary" onclick="nextStep(3)">I've linked it →</button>
+    </div>
+  </div>
+
+  <!-- ── STEP 3: Session ID ── -->
+  <div class="card" id="card-step3">
+    <h2><span>🔑</span> Copy Your Session ID</h2>
+    <div id="session-loading" style="display:flex; align-items:center; gap:10px; color:var(--muted); font-size:0.88rem; margin-bottom:16px;">
+      <span class="spinner spinner-muted"></span><span>Fetching session ID…</span>
+    </div>
+    <div id="session-content" style="display:none;">
+      <div class="success-badge">✅ Bot Connected</div>
+      <div class="session-display">
+        <div class="session-label">Session ID — starts with FIREBOX~</div>
+        <div id="session-id-text">Loading…</div>
+        <div class="session-actions">
+          <button class="btn-primary" id="copy-session-btn" onclick="copySession()">Copy Session ID</button>
+          <button class="btn-ghost" onclick="downloadSession()">Download .txt</button>
+        </div>
+      </div>
+      <p class="warning-note">⚠️ <strong>Keep this secret.</strong> Paste it as the <code>SESSION_ID</code> environment variable in Railway so the bot reconnects automatically on every restart.</p>
+    </div>
+    <div id="session-error" class="error-box"></div>
+    <div style="margin-top:18px;"><button class="btn-ghost" onclick="nextStep(2)">← Back</button></div>
+  </div>
+
+  <script>
+    let currentCode = "";
+    let currentSession = "";
+    let pollTimer = null;
+    let countdownTimer = null;
+    let qrPollTimer = null;
+    let activeMethod = "pair";
+
+    // ── Method tabs ──────────────────────────────────────────────────────────
+    function switchMethod(method) {
+      activeMethod = method;
+      ["pair","qr","restore"].forEach(m => {
+        document.getElementById("tab-" + m).classList.toggle("active", method === m);
+        document.getElementById("pane-" + m).classList.toggle("visible", method === m);
+      });
+      if (method === "qr") loadQR();
+    }
+
+    // ── Restore Session ──────────────────────────────────────────────────────
+    async function restoreSession() {
+      const input   = document.getElementById("restore-input").value.trim();
+      const btn     = document.getElementById("restore-btn");
+      const errEl   = document.getElementById("restore-error");
+      const succEl  = document.getElementById("restore-success");
+      errEl.style.display  = "none";
+      succEl.style.display = "none";
+
+      if (!input || !input.includes("~")) {
+        errEl.textContent = "⚠️ Please paste your full FIREBOX~... Session ID.";
+        errEl.style.display = "block";
+        return;
+      }
+
+      btn.disabled = true;
+      btn.innerHTML = '<span class="spinner"></span>Restoring…';
+
+      try {
+        const r    = await fetch("/api/restore-session", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ sessionId: input })
+        });
+        const data = await r.json();
+        if (!r.ok || data.error) {
+          errEl.textContent = "⚠️ " + (data.error || "Failed to restore session.");
+          errEl.style.display = "block";
+          btn.disabled = false;
+          btn.textContent = "Restore & Restart Bot";
+        } else {
+          succEl.textContent = "✅ " + data.message;
+          succEl.style.display = "block";
+          btn.textContent = "Restarting…";
+          // Poll until the bot is back online, then reload
+          let reloadAttempts = 0;
+          const reloadTimer = setInterval(async () => {
+            reloadAttempts++;
+            try {
+              const s = await fetch("/api/bot/status");
+              if (s.ok) { clearInterval(reloadTimer); window.location.reload(); }
+            } catch (_) {}
+            if (reloadAttempts > 30) { clearInterval(reloadTimer); window.location.reload(); }
+          }, 2000);
+        }
+      } catch (e) {
+        errEl.textContent = "⚠️ Network error. Make sure the bot server is running.";
+        errEl.style.display = "block";
+        btn.disabled = false;
+        btn.textContent = "Restore & Restart Bot";
+      }
+    }
+
+    // ── Step navigation ──────────────────────────────────────────────────────
+    function nextStep(n) {
+      document.getElementById("card-step1").classList.toggle("visible", n === 1);
+      document.getElementById("card-step2").classList.toggle("visible", n === 2);
+      document.getElementById("card-step3").classList.toggle("visible", n === 3);
+      [1,2,3].forEach(i => {
+        const node   = document.getElementById("sn" + i);
+        const circle = document.getElementById("sc" + i);
+        node.className   = "step-node" + (i === n ? " active" : i < n ? " done" : "");
+        circle.className = "step-circle" + (i === n ? " active" : i < n ? " done" : "");
+        circle.textContent = i < n ? "✓" : String(i);
+      });
+      [1,2].forEach(i => {
+        document.getElementById("sl" + i).className = "step-line" + (i < n ? " done" : "");
+      });
+      if (n === 2) startPollConnection();
+      if (n === 3) loadSessionId();
+    }
+
+    // ── Status chip ──────────────────────────────────────────────────────────
+    async function fetchStatus() {
+      try {
+        const r    = await fetch("/api/bot/status");
+        const data = await r.json();
+        const chip = document.getElementById("status-chip");
+        const txt  = document.getElementById("status-text");
+        const alBox = document.getElementById("already-connected");
+        chip.className = "";
+        if (data.status === "online") {
+          chip.classList.add("online");
+          txt.textContent = "Connected — " + (data.user?.name || data.user?.id || "Online");
+          alBox.style.display = "block";
+          document.getElementById("pair-btn").disabled = true;
+        } else if (data.status === "connecting") {
+          chip.classList.add("connecting");
+          txt.textContent = "Connecting…";
+          alBox.style.display = "none";
+          document.getElementById("pair-btn").disabled = false;
+        } else {
+          chip.classList.add("offline");
+          txt.textContent = "Offline";
+          alBox.style.display = "none";
+          document.getElementById("pair-btn").disabled = false;
+        }
+        return data.status;
+      } catch {
+        document.getElementById("status-chip").className = "offline";
+        document.getElementById("status-text").textContent = "Unreachable";
+        return "offline";
+      }
+    }
+
+    // ── Countdown timer ──────────────────────────────────────────────────────
+    function startCountdown(seconds) {
+      if (countdownTimer) clearInterval(countdownTimer);
+      const total = seconds;
+      let remaining = seconds;
+      const bar  = document.getElementById("countdown-bar");
+      const text = document.getElementById("countdown-text");
+      bar.style.width = "100%";
+      bar.style.background = "var(--fire2)";
+      text.className = "countdown-text";
+      text.textContent = `Expires in ${remaining}s — enter it in WhatsApp now!`;
+
+      countdownTimer = setInterval(() => {
+        remaining--;
+        const pct = Math.max(0, (remaining / total) * 100);
+        bar.style.width = pct + "%";
+        if (remaining <= 30) {
+          bar.style.background = "var(--error)";
+          text.className = "countdown-text urgent";
+          text.textContent = `⚠️ Expires in ${remaining}s — hurry!`;
+        } else {
+          text.textContent = `Expires in ${remaining}s — enter it in WhatsApp now!`;
+        }
+        if (remaining <= 0) {
+          clearInterval(countdownTimer);
+          text.textContent = "⏰ Code expired — click Get Code again for a fresh one.";
+          text.className = "countdown-text urgent";
+          bar.style.width = "0%";
+        }
+      }, 1000);
+    }
+
+    // ── Request pairing code ─────────────────────────────────────────────────
+    async function requestCode() {
+      const phone = document.getElementById("phone-input").value.replace(/\D/g, "");
+      const btn   = document.getElementById("pair-btn");
+      const errEl = document.getElementById("pair-error");
+      const resEl = document.getElementById("code-result");
+      errEl.style.display = "none";
+      resEl.style.display = "none";
+      if (countdownTimer) { clearInterval(countdownTimer); countdownTimer = null; }
+
+      if (!phone || phone.length < 7) {
+        showPairError("Please enter a valid phone number with country code.");
+        return;
+      }
+
+      btn.disabled = true;
+      btn.innerHTML = '<span class="spinner"></span>Generating…';
+
+      // Wipe stale session first so WhatsApp doesn't reject with a partial state
+      try { await fetch("/api/wipe-session", { method: "POST" }); } catch (_) {}
+
+      try {
+        const r    = await fetch("/api/pair-code", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ phone })
+        });
+        const data = await r.json();
+        if (!r.ok || data.error) {
+          showPairError(data.error || "Failed to generate pairing code.");
+        } else {
+          currentCode = data.code;
+          document.getElementById("pair-code").textContent = formatCode(data.code);
+          resEl.style.display = "block";
+          resetCopyCodeBtn();
+          startCountdown(160);
+        }
+      } catch (e) {
+        showPairError("Network error. Make sure the bot server is running.");
+      } finally {
+        btn.disabled = false;
+        btn.textContent = "Get Code";
+      }
+    }
+
+    function formatCode(code) {
+      const c = code.replace(/[-\s]/g, "");
+      return c.length === 8 ? c.slice(0,4) + "-" + c.slice(4) : code;
+    }
+
+    function showPairError(msg) {
+      const el = document.getElementById("pair-error");
+      el.textContent = "⚠️ " + msg;
+      el.style.display = "block";
+    }
+
+    function copyPairCode() {
+      if (!currentCode) return;
+      navigator.clipboard.writeText(currentCode.replace(/[-\s]/g, "")).then(() => {
+        const btn = document.getElementById("copy-code-btn");
+        btn.textContent = "✓ Copied!";
+        btn.classList.add("copied");
+        setTimeout(() => { btn.textContent = "Copy Code"; btn.classList.remove("copied"); }, 2500);
+      });
+    }
+
+    function resetCopyCodeBtn() {
+      const btn = document.getElementById("copy-code-btn");
+      btn.textContent = "Copy Code";
+      btn.classList.remove("copied");
+    }
+
+    // ── QR Code ──────────────────────────────────────────────────────────────
+    async function loadQR() {
+      const wrap   = document.getElementById("qr-img");
+      const status = document.getElementById("qr-status");
+      wrap.innerHTML = '<span class="spinner spinner-muted" style="width:24px;height:24px;border-width:3px;margin:0;"></span>';
+      status.textContent = "Loading QR code…";
+
+      try {
+        const r    = await fetch("/api/qr");
+        const data = await r.json();
+        if (r.ok && data.qr) {
+          wrap.innerHTML = `<img src="${data.qr}" alt="QR Code" />`;
+          status.textContent = "Scan with WhatsApp. Refreshes automatically every 20s.";
+          // Auto-refresh QR every 20s
+          if (qrPollTimer) clearInterval(qrPollTimer);
+          qrPollTimer = setInterval(() => { if (activeMethod === "qr") loadQR(); }, 20000);
+        } else {
+          wrap.innerHTML = '<span style="font-size:2rem;">🔳</span>';
+          status.textContent = data.error || "QR not ready yet. Start the bot without a SESSION_ID set.";
+        }
+      } catch {
+        wrap.innerHTML = '<span style="font-size:2rem;">⚠️</span>';
+        status.textContent = "Could not load QR — is the bot running?";
+      }
+    }
+
+    // ── Poll for connection (step 2) ─────────────────────────────────────────
+    function startPollConnection() {
+      if (pollTimer) clearInterval(pollTimer);
+      const waitBox = document.getElementById("waiting-box");
+      waitBox.style.display = "flex";
+      let attempts = 0;
+      pollTimer = setInterval(async () => {
+        attempts++;
+        const status = await fetchStatus();
+        if (status === "online") {
+          clearInterval(pollTimer);
+          waitBox.innerHTML = "✅ Connected! Move to Step 3 to copy your Session ID.";
+          waitBox.style.cssText = "background:#0f2d1a;border:1px solid #22c55e55;color:#4ade80;border-radius:8px;padding:14px 16px;margin-top:18px;font-size:0.88rem;";
+        }
+        if (attempts > 60) clearInterval(pollTimer);
+      }, 3000);
+    }
+
+    // ── Load session ID (step 3) ─────────────────────────────────────────────
+    async function loadSessionId() {
+      document.getElementById("session-loading").style.display = "flex";
+      document.getElementById("session-content").style.display = "none";
+      document.getElementById("session-error").style.display  = "none";
+      let attempts = 0;
+      const tryLoad = async () => {
+        attempts++;
+        try {
+          const r    = await fetch("/api/session-id");
+          const data = await r.json();
+          if (r.ok && data.sessionId) {
+            currentSession = data.sessionId;
+            document.getElementById("session-id-text").textContent = data.sessionId;
+            document.getElementById("session-loading").style.display = "none";
+            document.getElementById("session-content").style.display = "block";
+          } else if (attempts < 10) {
+            setTimeout(tryLoad, 3000);
+          } else {
+            document.getElementById("session-loading").style.display = "none";
+            const errEl = document.getElementById("session-error");
+            errEl.textContent = "⚠️ " + (data.error || "Session not found. Make sure the bot is connected first.");
+            errEl.style.display = "block";
+          }
+        } catch {
+          if (attempts < 10) setTimeout(tryLoad, 3000);
+          else {
+            document.getElementById("session-loading").style.display = "none";
+            document.getElementById("session-error").textContent = "⚠️ Network error loading session ID.";
+            document.getElementById("session-error").style.display = "block";
+          }
+        }
+      };
+      tryLoad();
+    }
+
+    function copySession() {
+      if (!currentSession) return;
+      navigator.clipboard.writeText(currentSession).then(() => {
+        const btn = document.getElementById("copy-session-btn");
+        btn.textContent = "✓ Copied!";
+        setTimeout(() => { btn.textContent = "Copy Session ID"; }, 2500);
+      });
+    }
+
+    function downloadSession() {
+      if (!currentSession) return;
+      const a = Object.assign(document.createElement("a"), {
+        href: URL.createObjectURL(new Blob([currentSession], { type: "text/plain" })),
+        download: "firebox-session-id.txt"
+      });
+      a.click();
+    }
+
+    // ── Init ─────────────────────────────────────────────────────────────────
+    fetchStatus();
+    setInterval(fetchStatus, 15000);
+  </script>
+</body>
+</html>
