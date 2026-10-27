@@ -1,70 +1,96 @@
-<!doctype html>
+   <!doctype html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>𝐑𝐄𝐃𝐓𝐄𝐂𝐇-𝐀𝐈 // Token</title>
+<title>𝐑𝐄𝐃𝐓𝐄𝐂𝐇 // Token</title>
 <style>
-:root{--purple:#6c63ff;--purple2:#8e64e6;--bg:#08060f;--card:#151121cc;--line:rgba(108,99,255,.22);--text:#e9e7ff;--muted:#9a97b8}
-*{box-sizing:border-box}body{margin:0;color:var(--text);font:14px system-ui;background:var(--bg);
-background-image:radial-gradient(at 20% 20%, rgba(108,99,255,.45) 0%, transparent 50%),
-radial-gradient(at 90% 80%, rgba(142,100,230,.35) 0%, transparent 50%),
-radial-gradient(at 50% 0%, rgba(108,99,255,.18) 0%, transparent 60%);min-height:100vh}
-body::before{content:"";position:fixed;inset:0;background-image:linear-gradient(rgba(108,99,255,.04) 1px, transparent 1px), linear-gradient(90deg, rgba(108,99,255,.04) 1px, transparent 1px);background-size:36px 36px;pointer-events:none}
-.wrap{width:min(480px,100%);margin:auto;padding:22px 18px 0;position:relative;z-index:1}
+*{box-sizing:border-box}
+body{margin:0;color:white;font:15px system-ui;min-height:100vh;overflow-x:hidden;background: #12082A}
+
+/* ONE ROUND LINE - SCREEN - DOES NOT BLOCK */
+.screen-line{
+  position:fixed;inset:8px;
+  border:2px solid #00E5FF;
+  border-radius:32px;
+  box-shadow:0 0 12px #00E5FF, 0 0 25px rgba(0,229,255,.4);
+  pointer-events:none;z-index:1;
+}
+
+.water{position:fixed;bottom:0;left:0;width:100%;height:200px;z-index:0;pointer-events:none;overflow:hidden;opacity:0.5}
+.wave{position:absolute;width:200%;height:200px;left:-50%;bottom:0;background: radial-gradient(ellipse at center, rgba(108,99,255,.4) 0%, transparent 70%);animation: waterFlow 8s ease-in-out infinite}
+.wave:nth-child(2){animation-delay:-2s;background: radial-gradient(ellipse at center, rgba(255,46,122,.3) 0%, transparent 70%);bottom:20px}
+.wave:nth-child(3){animation-delay:-4s;background: radial-gradient(ellipse at center, rgba(255,255,255,.1) 0%, transparent 70%);bottom:40px}
+@keyframes waterFlow{0%,100%{transform:translateX(0) translateY(0)}50%{transform:translateX(-25%) translateY(-10px)}}
+.bubbles-wrap{position:fixed;inset:0;z-index:1;pointer-events:none;overflow:hidden}
+.emoji-bubble{position:absolute;bottom:-50px;border-radius:50%;display:grid;place-items:center;background: radial-gradient(circle at 30% 30%, rgba(255,255,255,0.95), rgba(108,99,255,0.25));border:1px solid rgba(255,255,255,0.5);animation:floatUp linear infinite}
+@keyframes floatUp{0%{transform:translateY(0);opacity:0}10%{opacity:0.9}90%{opacity:0.8}100%{transform:translateY(-115vh) translateX(20px);opacity:0}}
+.wrap{width:min(450px,100%);margin:auto;padding:24px 20px 0;position:relative;z-index:2}
 .top{display:flex;justify-content:space-between;align-items:center;padding:10px 4px}
-.brand{color:var(--purple);font-weight:900;letter-spacing:.14em;display:flex;gap:10px;align-items:center}
-.brand svg{width:24px;height:24px;filter:drop-shadow(0 0 10px var(--purple))}
+.brand{color:blue;font-weight:900;letter-spacing:.14em;display:flex;gap:10px;align-items:center}
+.brand svg{width:18px;height:18px;color:#8e64e6}
+.nav{display:flex;gap:6px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.2);border-radius:999px;padding:5px;backdrop-filter:blur(12px)}
+.nav a{color:#c4b5ff;text-decoration:none;font-size:11px;font-weight:800;padding:9px 16px;border-radius:999px}
+.nav a.active{background:linear-gradient(90deg,#6C63FF,#FF2E7A);color:white}
+.tag{text-align:center;color:#FF7AC2;font-size:10px;letter-spacing:.22em;margin:14px 0 8px}
+h1{text-align:center;margin:0 0 10px;font:900 32px/1.05 system-ui;color:white}h1 span{color:#FF2E7A}
+.intro{text-align:center;color:#c4b5ff;min-height:40px;max-width:340px;margin:0 auto 18px}
 
-/* === FIXED NAV - NOW VISIBLE BUTTONS === */
-.nav{display:flex;gap:6px;background:rgba(108,99,255,.14);border:1px solid rgba(108,99,255,.30);border-radius:999px;padding:5px;backdrop-filter:blur(10px)}
-.nav a{color:#c4c1e6;text-decoration:none;font-size:11px;font-weight:800;letter-spacing:.08em;padding:9px 16px;border-radius:999px;transition:all.2s ease;border:1px solid transparent}
-.nav a:hover{color:white;background:rgba(108,99,255,.25)}
-.nav a.active{background:linear-gradient(90deg,var(--purple),var(--purple2));color:white;box-shadow:0 4px 18px rgba(108,99,255,.55);border-color:rgba(255,255,255,.15)}
+/* DASHBOARD - PURPLE PINK + ONE ROUND LINE - NOT BLOCKING */
+.card{
+  background: linear-gradient(135deg, #8E64E6 0%, #6C63FF 25%, #FF2E7A 90%);
+  border-radius:28px;
+  padding:24px 20px;
+  color:blue;
+  border:2px solid #FF00FF;
+  border-radius:28px;
+  box-shadow:0 0 15px #FF00FF, 0 0 30px rgba(255,0,255,.25), 0 20px 60px rgba(0,0,0,.5);
+  position:relative;
+  z-index:3;
+}
 
-.tag{text-align:center;color:var(--purple);font-size:11px;letter-spacing:.25em;margin:14px 0 8px}
-h1{text-align:center;margin:0 0 10px;font:900 36px/1.05 system-ui;letter-spacing:-.03em}h1 span{color:var(--purple)}
-.intro{text-align:center;color:var(--muted);line-height:1.6;min-height:40px;max-width:340px;margin:0 auto 18px}
-.card{background:var(--card);backdrop-filter:blur(20px);border:1px solid var(--line);border-radius:28px;padding:22px;box-shadow:0 20px 60px rgba(0,0,0,.6), 0 0 0 1px rgba(108,99,255,.15) inset}
-
-/* === FIXED ICON - NOW WITH STRONG RING === */
-.card-icon{width:88px;height:88px;margin:6px auto 20px;background:linear-gradient(180deg,var(--purple),var(--purple2));border-radius:50%;display:grid;place-items:center;font-size:40px;position:relative;box-shadow:0 0 0 10px rgba(108,99,255,.18), 0 0 0 20px rgba(108,99,255,.08), 0 0 40px rgba(108,99,255,.7);animation:pulse 2.2s infinite}
-@keyframes pulse{0%{box-shadow:0 0 0 10px rgba(108,99,255,.18),0 0 0 20px rgba(108,99,255,.08),0 0 40px rgba(108,99,255,.7)}50%{box-shadow:0 0 0 14px rgba(108,99,255,.12),0 0 0 28px rgba(108,99,255,.04),0 0 55px rgba(108,99,255,.9)}100%{box-shadow:0 0 0 10px rgba(108,99,255,.18),0 0 0 20px rgba(108,99,255,.08),0 0 40px rgba(108,99,255,.7)}}
-
-.label{color:var(--purple);font-size:10px;letter-spacing:.18em;margin-bottom:10px;display:block}
-.input{display:flex;align-items:center;gap:8px;background:#0c0a14;border:1px solid var(--line);border-radius:14px;padding:12px 14px}
-.input b{color:var(--purple)}input{flex:1;border:0;outline:0;background:transparent;color:var(--text);font:inherit}
-#generate{width:100%;margin-top:14px;border:0;border-radius:14px;padding:15px;background:linear-gradient(90deg,var(--purple),var(--purple2));color:white;font-weight:900;letter-spacing:.08em;cursor:pointer;box-shadow:0 8px 24px rgba(108,99,255,.4)}
-.result{margin-top:18px;padding:16px;border:1px dashed #ff7ac2;border-radius:16px;background:#1a1120}
-.token{display:block;margin-top:10px;color:#7cf7ff;font-size:22px;word-break:break-all}
-.copy{width:100%;margin-top:12px;border-radius:10px;border:1px solid #ff7ac2;background:transparent;color:#ff7ac2;padding:10px;cursor:pointer}
-.plans{margin-top:20px;padding-top:16px;border-top:1px solid var(--line)}
-.plans-head{display:flex;justify-content:space-between;font-size:9px;letter-spacing:.12em;color:var(--purple)}
-.plan-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:10px}
-.plan{background:#0c0a14;border:1px solid var(--line);border-radius:12px;padding:10px;text-align:center}
-.plan strong{color:white}.plan span{color:var(--muted);font-size:10px;display:block;margin-top:2px}.plan button{margin-top:8px;width:100%;border-radius:8px;border:1px solid var(--line);background:transparent;color:var(--muted);font-size:9px;padding:6px}
-.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:18px 0}
-.stat{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px;text-align:center;backdrop-filter:blur(10px)}
-.stat b{display:block;color:var(--purple);font-size:10px;letter-spacing:.1em}.stat strong{display:block;font-size:18px;margin-top:6px}
-.how{margin:20px 0}.how h3{margin:0 0 4px}.how p{color:var(--muted);margin:0 0 12px;font-size:12px}
-.step{display:flex;gap:12px;align-items:center;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px;margin-bottom:10px}
-.step i{width:34px;height:34px;border-radius:50%;background:linear-gradient(180deg,var(--purple),var(--purple2));display:grid;place-items:center;font-style:normal;font-weight:900;flex:0 0 34px}
-.step strong{display:block;font-size:14px}.step span{color:var(--muted);font-size:11px}
-.footer{margin:26px 0 30px;padding:18px;border-top:1px solid var(--line);display:flex;gap:12px;align-items:center;background:var(--card);border-radius:14px}
-.footer svg{width:36px;height:36px}.footer a{color:#25D366;text-decoration:none;font-weight:700}
-.copyright{text-align:center;color:var(--muted);font-size:10px;padding-bottom:20px}
-.toast{position:fixed;right:14px;bottom:14px;background:#241329;border:1px solid #ff7ac2;color:white;padding:12px 14px;border-radius:10px;display:none;z-index:9}.toast.show{display:block}
-.progress{display:none;margin-top:14px;padding:12px;border:1px solid var(--line);border-radius:12px;background:#0c0a14;font-size:11px;color:var(--purple)}.progress.show{display:block}
+.card-icon{width:84px;height:84px;margin:6px auto 18px;background:radial-gradient(circle at 30% 30%, #fff, #FFB3D1);border-radius:50%;display:grid;place-items:center;color:#FF2E7A;box-shadow:0 0 0 8px rgba(255,255,255,.15),0 0 30px rgba(255,255,255,.6);animation:pulse 2.2s infinite}
+@keyframes pulse{0%,100%{box-shadow:0 0 0 8px rgba(255,255,255,.15),0 0 30px rgba(255,255,255,.4)}50%{box-shadow:0 0 0 14px rgba(255,255,255,.08),0 0 50px rgba(255,255,255,.7)}}
+.spin-emoji{display:inline-block;font-size:38px;animation:spin 2.5s linear infinite}
+@keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
+.label{color:#FFE0EC;font-size:11px;letter-spacing:.18em;margin-bottom:10px;display:block;font-weight:800}
+.input{display:flex;align-items:center;gap:8px;background:rgba(255,255,255,.18);border:1px solid rgba(255,255,255,.3);border-radius:14px;padding:12px 14px;position:relative;z-index:4}
+.input b{color:#fff}input{flex:1;border:0;outline:0;background:transparent;color:blue;font:inherit}input::placeholder{color:rgba(255,255,255,.6)}
+#generate{width:100%;margin-top:14px;border:0;border-radius:14px;padding:14px;background:#fff;color:#8E64E6;font-weight:900;cursor:pointer;position:relative;z-index:4}
+.result{margin-top:16px;padding:14px;border:1px dashed #fff;border-radius:14px;background:rgba(255,255,255,.15);position:relative;z-index:4}
+.token{display:block;margin-top:8px;color:#fff;font-size:20px;word-break:break-all}
+.copy{width:100%;margin-top:10px;border-radius:10px;border:1px solid rgba(255,255,255,.4);background:rgba(255,255,255,.15);color:blue;padding:9px;cursor:pointer;font-weight:700;position:relative;z-index:4}
+.plans{margin-top:18px;padding-top:14px;border-top:1px solid rgba(255,255,255,.2);position:relative;z-index:4}
+.plans-head{display:flex;justify-content:space-between;font-size:9px;color:#FFE0EC}
+.plan-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-top:8px}
+.plan{background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.22);border-radius:12px;padding:9px;text-align:center}
+.plan strong{color:white}.plan span{color:#FFE0EC;font-size:9px;display:block}.plan button{margin-top:6px;width:100%;border-radius:7px;border:1px solid rgba(255,255,255,.25);background:rgba(0,0,0,.15);color:#FFE0EC;font-size:8px;padding:5px}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:16px 0}
+.stat{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);border-radius:12px;padding:12px;text-align:center}
+.stat b{display:block;color:#FFD6E8;font-size:9px}.stat strong{color:white;font-size:16px;margin-top:4px;display:block}
+.how{margin:18px 0}.how h3{color:white;margin:0 0 4px}.how p{color:#c4b5ff;margin:0 0 10px;font-size:11px}
+.step{display:flex;gap:10px;align-items:center;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:12px;padding:12px;margin-bottom:8px}
+.step i{width:30px;height:30px;border-radius:50%;background:linear-gradient(180deg,#6C63FF,#FF2E7A);display:grid;place-items:center;font-weight:900;color: blue;font-size:12px}
+.step strong{color: blue;font-size:13px}.step span{color:#c4b5ff;font-size:11px;display:block}
+.footer{margin:22px 0 24px;padding:16px;border:1px solid rgba(255,255,255,.15);display:flex;gap:12px;align-items:center;background:rgba(255,255,255,.06);border-radius:14px}
+.footer .wa-icon{width:48px;height:48px;flex:0 0 48px;display:grid;place-items:center;background:#25D366;border-radius:50%;border:2px solid white}
+.join-btn{display:inline-flex;align-items:center;gap:5px;margin-top:6px;padding:9px 16px;background:linear-gradient(90deg,#25D366,#128C7E);color:white!important;text-decoration:none!important;font-weight:900;font-size:11px;border-radius:999px}
+.copyright{text-align:center;color:#9a8cc4;font-size:8px;padding-bottom:24px}
+.toast{position:fixed;right:14px;bottom:14px;background:#1e102e;border:1px solid #00E5FF;color:blue;padding:12px 14px;border-radius:10px;display:none;z-index:9999}.toast.show{display:block}
+.progress{display:none;margin-top:12px;padding:10px;border-radius:10px;background:rgba(255,255,255,.2);font-size:11px;color:blue}.progress.show{display:block}
 </style>
 </head>
 <body>
+<div class="screen-line"></div>
+<div class="water"><div class="wave"></div><div class="wave"></div><div class="wave"></div></div>
+<div class="bubbles-wrap" id="bubbles"></div>
 <div class="wrap">
-<header class="top"><div class="brand"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>// REDTECH</div><nav class="nav"><a href="/token" class="active">TOKEN</a><a href="/code">PAIR CODE</a></nav></header>
+<header class="top"><div class="brand"><svg viewBox="0 0 25 25" fill="currentColor"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>// REDTECH</div><nav class="nav"><a href="/token" class="active">TOKEN</a><a href="/code">PAIR CODE</a></nav></header>
 <div class="tag">[ NODE 01 / IDENTITY ]</div>
-<h1>Claim your <span>Redtech token.</span></h1>
+<h1>Claim your <span>𝐑𝐄𝐃𝐓𝐄𝐂𝐇 TOKEN.</span></h1>
 <p class="intro" id="rotating-copy"></p>
 <section class="card">
-<div class="card-icon">⚡</div>
+<div class="card-icon"><span class="spin-emoji">❤️‍🔥</span></div>
 <label class="label">PHONE // INTERNATIONAL FORMAT</label>
 <div class="input"><b>+</b><input id="phone" placeholder="254 7XX XXX XXX"></div>
 <button id="generate">GENERATE TOKEN //→</button>
@@ -77,23 +103,45 @@ h1{text-align:center;margin:0 0 10px;font:900 36px/1.05 system-ui;letter-spacing
 <div class="how"><h3>How it works</h3><p>Get started in 3 simple steps</p>
 <div class="step"><i>1</i><div><strong>Enter Phone</strong><span>Your WhatsApp number</span></div></div>
 <div class="step"><i>2</i><div><strong>Generate Token</strong><span>One token, reusable</span></div></div>
-<div class="step"><i>3</i><div><strong>Claim & Pair</strong><span>Use token on Pair Code page</span></div></div>
+<div class="step"><i>3</i><div><strong>Claim & Pair</strong><span> Use token on Pair Code page</span></div></div>
 </div>
 <div class="footer">
-<svg viewBox="0 0 24 24" fill="#25D366"><path d="M12 0C5.37 0 0 5.37 0 12c0 2.11.55 4.11 1.6 5.85L0 24l6.3-1.65A11.9 11.9 0 0012 24c6.63 0 12-5.37 12-12S18.63 0 12 0z"/></svg>
-<div><div>Join our Community</div><a href="https://whatsapp.com/channel/0029Vb9AwScF6sn47ClubG1Z" target="_blank">WhatsApp Channel →</a></div>
+<div class="wa-icon"><svg viewBox="0 0 24 24" width="26" height="26" fill="white"><path d="M19.05 4.91A9.82 9.82 0 0 0 12.04 2c-5.46 0-9.9 4.44-9.9 9.9 0 1.75.46 3.45 1.32 4.95L2.05 22l5.25-1.38a9.9 9.9 0 0 0 4.74 1.21h0c5.46 0 9.9-4.44 9.9-9.9a9.87 9.87 0 0 0-2.89-6.99zm-7.01 15.24h0a8.13 8.13 0 0 1-4.14-1.13l-.3-.18-3.12.82.83-3.04-.2-.31a8.2 8.2 0 0 1-1.26-4.38 8.23 8.23 0 0 1 8.22-8.22c2.2 0 4.27.86 5.82 2.42a8.18 8.18 0 0 1 2.41 5.83 8.23 8.23 0 0 1-8.26 8.19zm4.52-6.16c-.25-.12-1.47-.73-1.7-.81-.23-.08-.39-.12-.56.12s-.64.81-.79.97c-.14.17-.29.19-.54.06-.25-.12-1.05-.39-2-1.23-.74-.66-1.23-1.47-1.38-1.72-.14-.25-.01-.38.11-.51.11-.11.25-.29.37-.43.12-.15.16-.25.25-.42.08-.17.04-.31-.02-.43s-.56-1.34-.76-1.84c-.2-.48-.4-.42-.56-.43h-.48c-.17 0-.43.06-.66.31-.23.25-.87.85-.87 2.08s.89 2.41 1.02 2.58c.12.17 1.75 2.67 4.24 3.75.59.26 1.05.41 1.41.52.59.19 1.13.16 1.55.1.47-.07 1.47-.6 1.67-1.18.21-.58.21-1.07.14-1.18-.06-.11-.23-.17-.48-.29z"/></svg></div>
+<div>
+<div style="font-weight:800;color:white;font-size:13px">Join our Community</div>
+<div style="color:#c4b5ff;font-size:11px;margin-top:2px">Get updates & support</div>
+<a href="https://whatsapp.com/channel/0029Vb9AwScF6sn47ClubG1Z" target="_blank" class="join-btn">📩 JOIN CHANNEL →</a>
 </div>
-<div class="copyright">© 2026 Redtech AI. All rights reserved.</div>
+</div>
+<div class="copyright">© 2026 𝐑𝐄𝐃𝐓𝐄𝐂𝐇 BOT. All rights reserved.</div>
 </div>
 <div id="toast" class="toast"></div>
 <script>
+const emojis = ["🥹","🩷","❤️","😘","💗","🥰","😍","🥳","😛","😋","🫠","🥵","😡","🫣","🤗","💯","🔥","💖","💘","💕","💦","💞","💓","🌹","⚡","👁️","🖤","🌚","🐉","🤫","📷","🙄","👀","😂","😭","🤯","😎",];
+const bubblesWrap = document.getElementById('bubbles');
+const frag = document.createDocumentFragment();
+for(let i=0; i<150; i++){
+  const b = document.createElement('div');
+  b.className='emoji-bubble';
+  const size = Math.random()*16 + 12;
+  b.style.width=size+'px';b.style.height=size+'px';
+  b.style.left=Math.random()*150+'%';
+  b.style.animationDuration=(Math.random()*8 + 5)+'s';
+  b.style.animationDelay=(Math.random()*13)+'s';
+  b.style.fontSize=(size*0.7)+'px';
+  b.textContent = emojis[Math.floor(Math.random()*emojis.length)];
+  frag.appendChild(b);
+}
+bubblesWrap.appendChild(frag);
 const $=s=>document.querySelector(s);
 const copyLines=["Generate once. Store it safely. Use the same token whenever you need a new WhatsApp pairing code.","Your Redtech token stays yours."];
-(async()=>{const t=$("#rotating-copy");for(let i=0;;i=(i+1)%copyLines.length){const l=copyLines[i];for(let j=0;j<=l.length;j++){t.textContent=l.slice(0,j);await new Promise(r=>setTimeout(r,35))}await new Promise(r=>setTimeout(r,2500));for(let j=l.length;j>=0;j--){t.textContent=l.slice(0,j);await new Promise(r=>setTimeout(r,18))}}})();
+(async()=>{const t=$("#rotating-copy");for(let i=0;;i=(i+1)%copyLines.length){const l=copyLines[i];for(let j=0;j<=l.length;j++){t.textContent=l.slice(0,j);await new Promise(r=>setTimeout(r,45))}await new Promise(r=>setTimeout(r,2500));for(let j=l.length;j>=0;j--){t.textContent=l.slice(0,j);await new Promise(r=>setTimeout(r,18))}}})();
 function toast(m){$("#toast").textContent=m;$("#toast").classList.add("show");setTimeout(()=>$("#toast").classList.remove("show"),3000)}
 async function api(u,o){const r=await fetch(u,{headers:{"Content-Type":"application/json"},...o});const d=await r.json().catch(()=>({}));if(!r.ok)throw Error(d.error||"Request failed");return d}
 $("#generate").onclick=async()=>{const phone=$("#phone").value.trim();if(!phone)return toast("Enter phone");const b=$("#generate");b.disabled=true;$("#progress").classList.add("show");try{const d=await api("/api/bot/token",{method:"POST",body:JSON.stringify({phone})});$("#result").hidden=false;$("#token").textContent=d.token||"";toast("Token created")}catch(e){toast(e.message)}finally{b.disabled=false;$("#progress").classList.remove("show")}};
 $("#copy").onclick=async()=>{await navigator.clipboard.writeText($("#token").textContent);toast("Copied!")};
 fetch("/api/bot/payment-config").then(r=>r.json()).then(c=>{$("#payment-state").textContent=c.enabled?"MPESA READY":"COMING SOON"}).catch(()=>$("#payment-state").textContent="OFFLINE");
 </script>
-</body></html>
+</body>
+</html>
+                                                              
