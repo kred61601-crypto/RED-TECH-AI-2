@@ -8,7 +8,7 @@ function matchesSecret(provided, expected) {
 }
 
 function isPanelProxy(req) {
-    return req.get("X-Firebox-Panel-Proxy") === "1" && matchesSecret(req.get("X-Firebox-Panel-Key"), process.env.FIREBOX_BOT_KEY);
+    return req.get("X-Redtech-Panel-Proxy") === "1" && matchesSecret(req.get("X-Redtech-Panel-Key"), process.env.REDTECH_BOT_KEY);
 }
 
 module.exports = { matchesSecret, isPanelProxy };

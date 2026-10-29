@@ -4,7 +4,6 @@
  * Each browser session (cookie) maps to one BotInstance.
  */
 const express = require("express");
-const QRCode = require("qrcode");
 const botManager = require("./botManager");
 const serverRegistry = require("./serverRegistry");
 const { isPanelProxy, matchesSecret } = require("./panelProxyAuth");
@@ -14,6 +13,28 @@ const tokenRegistry = require("./tokenRegistry");
 
 const router = express.Router();
 router.use(express.json());
+
+// Basic anonymous abuse protection for the public phone-to-pair-code endpoint.
+const quickPairAttempts = new Map();
+const QUICK_PAIR_WINDOW_MS = 10 * 60 * 1000;
+const QUICK_PAIR_MAX_ATTEMPTS = 8;
+function checkQuickPairRateLimit(req) {
+    const key = String(req.ip || req.socket?.remoteAddress || "unknown");
+    const now = Date.now();
+    const current = quickPairAttempts.get(key);
+    if (!current || now - current.startedAt >= QUICK_PAIR_WINDOW_MS) {
+        quickPairAttempts.set(key, { startedAt: now, count: 1 });
+        return true;
+    }
+    if (current.count >= QUICK_PAIR_MAX_ATTEMPTS) return false;
+    current.count += 1;
+    if (quickPairAttempts.size > 5000) {
+        for (const [ip, entry] of quickPairAttempts) {
+            if (now - entry.startedAt >= QUICK_PAIR_WINDOW_MS) quickPairAttempts.delete(ip);
+        }
+    }
+    return true;
+}
 router.post("/hub-sync", async (req, res) => {
     if (!matchesSecret(req.get("X-Firebox-Sync-Key"), process.env.FIREBOX_PANEL_SYNC_SECRET)) return res.status(401).json({ error: "Invalid panel sync key." });
     try {
@@ -28,46 +49,40 @@ router.get("/payment-config", (_req, res) => res.json({
     plans: [{ days: 7, amount: 29 }, { days: 14, amount: 49 }, { days: 30, amount: 99 }]
 }));
 
-// Public Firebox pairing endpoints intentionally do not require an account.
-router.post("/token", async (req, res) => {
+// Phone-only pairing: create/reuse the internal token without exposing it to the visitor.
+router.post("/quick-pair-code", async (req, res) => {
+    if (!checkQuickPairRateLimit(req)) return res.status(429).json({ error: "Too many pairing requests. Please wait 10 minutes and try again." });
     try {
-        const token = await tokenRegistry.create(req.body?.phone);
-        res.status(201).json({ ok: true, token });
-    } catch (error) { res.status(400).json({ error: error.message }); }
-});
-
-router.post("/token/pair-code", async (req, res) => {
-    try {
-        const resolved = await tokenRegistry.resolve(req.body?.token);
-        // Keep the same bot identity after a Railway restart. The token hash is
-        // safe to store in the signed session and is never exposed as a secret.
+        const phone = String(req.body?.phone || "").replace(/\D/g, "");
+        if (phone.length < 7 || phone.length > 15) {
+            return res.status(400).json({ error: "Enter a valid WhatsApp number with country code." });
+        }
+        const token = await tokenRegistry.getOrCreate(phone);
+        const resolved = await tokenRegistry.resolve(token);
         req.session.botTokenHash = resolved.record.tokenHash;
         const pairingUserId = userId(req);
-
         const inst = botManager.get(pairingUserId);
-        // Reuse a live or persisted session. Opening a second socket for a
-        // registered WhatsApp device causes a 440 "connection replaced" error.
+
         if (inst.status === "online") {
             await tokenRegistry.markUsed(resolved);
-            return res.json({ ok: true, restored: true, code: "SESSION RESTORED" });
+            return res.json({ ok: true, restored: true, code: "CONNECTED" });
         }
         if (inst.status === "offline" && !inst.isReconnecting) await inst.start();
         if (inst.restoredFromDatabase) {
             const state = await inst.waitForSessionState();
             if (state === "online") {
                 await tokenRegistry.markUsed(resolved);
-                return res.json({ ok: true, restored: true, code: "SESSION RESTORED" });
+                return res.json({ ok: true, restored: true, code: "CONNECTED" });
             }
         }
-
-        // No registered credentials exist, so this is a genuine first pairing.
-        // triggerPairingRestart performs the deliberate stale-session cleanup.
         const rawCode = await inst.triggerPairingRestart(resolved.phone);
         const code = String(rawCode || "").replace(/[^A-Za-z0-9]/g, "").toUpperCase();
-        if (code.length !== 8) throw new Error("WhatsApp returned an invalid pairing code. Please retry.");
+        if (code.length !== 8) throw new Error("WhatsApp returned an invalid pairing code. Please try again.");
         await tokenRegistry.markUsed(resolved);
-        res.json({ ok: true, code });
-    } catch (error) { res.status(400).json({ error: error.message || "Failed to generate pairing code." }); }
+        return res.json({ ok: true, code });
+    } catch (error) {
+        return res.status(400).json({ error: error.message || "Could not generate pairing code." });
+    }
 });
 
 router.use((req, res, next) => {
@@ -75,7 +90,7 @@ router.use((req, res, next) => {
     return res.status(401).json({ error: "Sign in required." });
 });
 
-// Use the token hash when available, otherwise the express-session ID.
+// Use the private bot identity hash when available, otherwise the browser cookie identity.
 function userId(req) {
     if (req.session.botTokenHash) return req.session.botTokenHash;
     return req.session.id;
@@ -111,21 +126,6 @@ router.post("/stop", (req, res) => {
     res.json({ ok: true });
 });
 
-// ── QR code ───────────────────────────────────────────────────────────────────
-
-router.get("/qr", async (req, res) => {
-    const inst = botManager.instances.get(userId(req));
-    if (!inst || !inst.latestQr) {
-        return res.status(404).json({ error: "No QR available yet." });
-    }
-    try {
-        const dataUrl = await QRCode.toDataURL(inst.latestQr, { width: 300, margin: 2 });
-        res.json({ qr: dataUrl });
-    } catch (e) {
-        res.status(500).json({ error: "Failed to generate QR: " + e.message });
-    }
-});
-
 // ── Pairing code ──────────────────────────────────────────────────────────────
 
 router.post("/pair-code", async (req, res) => {
@@ -150,30 +150,6 @@ router.post("/pair-code", async (req, res) => {
         res.json({ ok: true, code });
     } catch (err) {
         res.status(500).json({ error: err.message || "Failed to generate pairing code." });
-    }
-});
-
-// ── Session ID ────────────────────────────────────────────────────────────────
-
-router.get("/session-id", (req, res) => {
-    const inst = botManager.instances.get(userId(req));
-    if (!inst) return res.status(404).json({ error: "Bot not started." });
-    const sid = inst.getSessionId();
-    if (!sid) return res.status(404).json({ error: "No session yet. Connect WhatsApp first." });
-    res.json({ sessionId: sid });
-});
-
-router.post("/restore-session", (req, res) => {
-    const { sessionId } = req.body || {};
-    if (!sessionId) return res.status(400).json({ error: "sessionId is required." });
-    const inst = botManager.get(userId(req));
-    try {
-        inst.restoreSessionId(sessionId);
-        inst.sessionId = sessionId;
-        res.json({ ok: true });
-        if (inst.status === "offline" && !inst.isReconnecting) inst.start().catch(() => {});
-    } catch (e) {
-        res.status(400).json({ error: e.message });
     }
 });
 

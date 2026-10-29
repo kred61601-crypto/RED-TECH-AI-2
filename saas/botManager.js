@@ -62,7 +62,7 @@ class BotManager {
         // Baileys closes its WebSocket asynchronously. Give WhatsApp time to
         // observe the old device disconnect before opening the replacement.
         await new Promise(resolve => setTimeout(resolve, 2000));
-        const { clearDatabaseAuthState } = require("../firebox/dbAuth");
+        const { clearDatabaseAuthState } = require("../redtech/dbAuth");
         await clearDatabaseAuthState(`saas_${userId}`);
     }
 

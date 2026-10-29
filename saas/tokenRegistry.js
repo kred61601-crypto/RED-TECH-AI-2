@@ -71,6 +71,12 @@ function plain(record) {
 }
 
 module.exports = {
+    async getOrCreate(phone) {
+        const normalized = normalizePhone(phone);
+        const existing = (await this.listAdmin()).find(item => item.status === "active" && item.phone === normalized);
+        if (existing && existing.token) return existing.token;
+        return this.create(normalized);
+    },
     async create(phone) {
         const normalized = normalizePhone(phone);
         const token = makeToken();

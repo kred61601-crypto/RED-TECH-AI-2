@@ -113,7 +113,7 @@ async function collectionNames() {
 }
 function metadata() {
     return {
-        appName: process.env.APP_NAME || "Firebox Bot",
+        appName: process.env.APP_NAME || "Redtech Bot",
         apiVersion: API_VERSION,
         databaseType: isOnline() ? "mongodb" : "json-fallback",
         capabilities: { read: true, create: false, update: false, delete: false, schemaChanges: false, arbitraryCommands: false },
@@ -197,12 +197,12 @@ function createDatabaseApiRouter() {
             const offset = parseOffset(req.query.offset);
             res.json({ records: filtered.slice(offset, offset + limit), total: filtered.length, limit, offset });
         } catch (error) {
-            res.status(503).json({ error: "Unable to read Firebox token registry." });
+            res.status(503).json({ error: "Unable to read Redtech token registry." });
         }
     });
     router.get("/control-room/tokens/count", async (_req, res) => {
         try { res.json({ count: (await tokenRegistry.listAdmin()).length }); }
-        catch { res.status(503).json({ error: "Unable to read Firebox token registry." }); }
+        catch { res.status(503).json({ error: "Unable to read Retech token registry." }); }
     });
     return router;
 }
@@ -211,7 +211,7 @@ function createAdminRouter(requireAdmin) {
     router.use(express.json(), requireAdmin);
     router.get("/status", async (_req, res) => {
         const record = await activeKeyRecord();
-        res.json({ configured: Boolean(record && !record.revokedAt), prefix: "fbx_db_", createdAt: record?.createdAt || null, permissions: { read: true, create: false, update: false, delete: false } });
+        res.json({ configured: Boolean(record && !record.revokedAt), prefix: "rdh_db_", createdAt: record?.createdAt || null, permissions: { read: true, create: false, update: false, delete: false } });
     });
     router.post("/generate", async (_req, res) => { const result = await issueKey(); res.status(201).json({ apiKey: result.plaintext, createdAt: result.record.createdAt, warning: "Store this key securely. It will not be shown again." }); });
     router.post("/regenerate", async (_req, res) => { const result = await issueKey(); res.status(201).json({ apiKey: result.plaintext, createdAt: result.record.createdAt, warning: "The previous key was revoked. Store this key securely." }); });
