@@ -1,16 +1,15 @@
 {
-  "name": "𝐑𝐄𝐃𝐓𝐄𝐂𝐇-𝐀𝐈",
-  "description": "Javascript WhatsApp bot made by ☬ 👑 𝕂𝕀ℕ𝔾 ℝ𝔼𝔻 👑 ☬ 𓃵🔥 - 𝐑𝐄𝐃𝐓𝐄𝐂𝐇-𝐀𝐈",
+  "name": "\ud835\udc11\ud835\udc04\ud835\udc03\ud835\udc13\ud835\udc04\ud835\udc02\ud835\udc07-\ud835\udc00\ud835\udc08",
+  "description": "Javascript WhatsApp bot made by \u262c \ud83d\udc51 \ud835\udd42\ud835\udd40\u2115\ud835\udd3e \u211d\ud835\udd3c\ud835\udd3b \ud83d\udc51 \u262c \ud80c\udcf5\ud83d\udd25 - \ud835\udc11\ud835\udc04\ud835\udc03\ud835\udc13\ud835\udc04\ud835\udc02\ud835\udc07-\ud835\udc00\ud835\udc08",
   "logo": "https://files.catbox.moe/1k4htj.jpg",
-  "keywords": ["𝐑𝐄𝐃𝐓𝐄𝐂𝐇-𝐀𝐈", "whatsapp-bot", "redtech"],
+  "keywords": [
+    "\ud835\udc11\ud835\udc04\ud835\udc03\ud835\udc13\ud835\udc04\ud835\udc02\ud835\udc07-\ud835\udc00\ud835\udc08",
+    "whatsapp-bot",
+    "redtech"
+  ],
   "success_url": "/",
   "stack": "container",
   "env": {
-    "SESSION_ID": {
-      "description": "Your unique bot session ID (starts with REDTECH~). Get from /code",
-      "required": true,
-      "type": "string"
-    },
     "SUDO": {
       "description": "The Super-Admin phone number with country code (e.g. 254100969922)",
       "required": false,
@@ -36,7 +35,7 @@
     "STICKER_NAME": {
       "description": "Sticker pack name",
       "required": false,
-      "value": "☬ 👑 𝕂𝕀ℕ𝔾 ℝ𝔼𝔻 👑 ☬ 𓃵🔥 - 𝐑𝐄𝐃𝐓𝐄𝐂𝐇-𝐀𝐈"
+      "value": "\u262c \ud83d\udc51 \ud835\udd42\ud835\udd40\u2115\ud835\udd3e \u211d\ud835\udd3c\ud835\udd3b \ud83d\udc51 \u262c \ud80c\udcf5\ud83d\udd25 - \ud835\udc11\ud835\udc04\ud835\udc03\ud835\udc13\ud835\udc04\ud835\udc02\ud835\udc07-\ud835\udc00\ud835\udc08"
     },
     "ANTI_CALL": {
       "description": "Block calls",
@@ -86,12 +85,12 @@
     "AUTO_STATUS_MSG": {
       "description": "Custom status reply message",
       "required": false,
-      "value": "*SEEN YOUR STATUS BY 𝐑𝐄𝐃𝐓𝐄𝐂𝐇-𝐀𝐈 ❤️*"
+      "value": "*SEEN YOUR STATUS BY \ud835\udc11\ud835\udc04\ud835\udc03\ud835\udc13\ud835\udc04\ud835\udc02\ud835\udc07-\ud835\udc00\ud835\udc08 \u2764\ufe0f*"
     },
     "OWNER_NAME": {
       "description": "Bot Owner Name",
       "required": false,
-      "value": "☬ 👑 𝕂𝕀ℕ𝔾 ℝ𝔼𝔻 👑 ☬"
+      "value": "\u262c \ud83d\udc51 \ud835\udd42\ud835\udd40\u2115\ud835\udd3e \u211d\ud835\udd3c\ud835\udd3b \ud83d\udc51 \u262c"
     },
     "OWNER_NUMBER": {
       "description": "Owner number",
@@ -101,7 +100,7 @@
     "BOT_NAME": {
       "description": "Bot name",
       "required": false,
-      "value": "𝐑𝐄𝐃𝐓𝐄𝐂𝐇-𝐀𝐈"
+      "value": "\ud835\udc11\ud835\udc04\ud835\udc03\ud835\udc13\ud835\udc04\ud835\udc02\ud835\udc07-\ud835\udc00\ud835\udc08"
     },
     "ANTI_LINK": {
       "description": "Auto remove group links",
@@ -131,7 +130,7 @@
     "DESCRIPTION": {
       "description": "Menu caption",
       "required": false,
-      "value": "*CREATER ☬ 👑 𝕂𝕀ℕ𝔾 ℝ𝔼𝔻 👑 ☬ 𓃵🔥 - 𝐑𝐄𝐃𝐓𝐄𝐂𝐇-𝐀𝐈*"
+      "value": "*CREATER \u262c \ud83d\udc51 \ud835\udd42\ud835\udd40\u2115\ud835\udd3e \u211d\ud835\udd3c\ud835\udd3b \ud83d\udc51 \u262c \ud80c\udcf5\ud83d\udd25 - \ud835\udc11\ud835\udc04\ud835\udc03\ud835\udc13\ud835\udc04\ud835\udc02\ud835\udc07-\ud835\udc00\ud835\udc08*"
     },
     "DELETE_LINKS": {
       "description": "Remove links without kicking",
@@ -156,12 +155,12 @@
     "REACT_EMOJIS": {
       "description": "Reaction emojis (comma-separated)",
       "required": false,
-      "value": "❤️,🔥,👍,😍,😂,😮,😎,🥰,👋,🤝,💯,✨,⭐,🎉,🤗,😊,🙌,💪,👏,✅,🎈,🎊,🏆,⚡,💫,👌,🤙,💖,💕,💗,👑,💎,🌟,🎯,🎨,🎭,🎪,🎢,🎡,🎠"
+      "value": "\u2764\ufe0f,\ud83d\udd25,\ud83d\udc4d,\ud83d\ude0d,\ud83d\ude02,\ud83d\ude2e,\ud83d\ude0e,\ud83e\udd70,\ud83d\udc4b,\ud83e\udd1d,\ud83d\udcaf,\u2728,\u2b50,\ud83c\udf89,\ud83e\udd17,\ud83d\ude0a,\ud83d\ude4c,\ud83d\udcaa,\ud83d\udc4f,\u2705,\ud83c\udf88,\ud83c\udf8a,\ud83c\udfc6,\u26a1,\ud83d\udcab,\ud83d\udc4c,\ud83e\udd19,\ud83d\udc96,\ud83d\udc95,\ud83d\udc97,\ud83d\udc51,\ud83d\udc8e,\ud83c\udf1f,\ud83c\udfaf,\ud83c\udfa8,\ud83c\udfad,\ud83c\udfaa,\ud83c\udfa2,\ud83c\udfa1,\ud83c\udfa0"
     },
     "OWNER_EMOJIS": {
       "description": "Owner reaction emojis (comma-separated)",
       "required": false,
-      "value": "👑,💎,⭐,✨,🔥,💯,✅,🎉,🤖,⚡,💫,🌟,🏆,👾,🚀,💪,🎯,🔱,♾️,⚜️"
+      "value": "\ud83d\udc51,\ud83d\udc8e,\u2b50,\u2728,\ud83d\udd25,\ud83d\udcaf,\u2705,\ud83c\udf89,\ud83e\udd16,\u26a1,\ud83d\udcab,\ud83c\udf1f,\ud83c\udfc6,\ud83d\udc7e,\ud83d\ude80,\ud83d\udcaa,\ud83c\udfaf,\ud83d\udd31,\u267e\ufe0f,\u269c\ufe0f"
     },
     "ANTI_DEL_PATH": {
       "description": "Deleted message resend path - same or inbox",
@@ -189,4 +188,4 @@
       "url": "https://github.com/heroku/heroku-buildpack-nodejs.git"
     }
   ]
-    }
+}
