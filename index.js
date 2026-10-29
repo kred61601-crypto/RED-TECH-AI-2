@@ -1,7 +1,7 @@
 /**
- * Redtech Ai — SaaS Server
+ * Redtech Bot — SaaS Server
  *
- * The original Redtech Ai browser session remains available for bot setup.
+ * The public setup flow generates WhatsApp pairing codes directly from a phone number.
  * The optional server registry uses a separate password-authenticated account
  * stored in the existing local application database directory.
  */
@@ -101,8 +101,6 @@ app.use("/api/admin/redtech-database", require("./saas/redtechDatabaseApi").crea
 
 // ── Pages ─────────────────────────────────────────────────────────────────────
 
-const serverWorkspace = path.join(__dirname, "public", "servers.html");
-const tokenWorkspace = path.join(__dirname, "public", "token.html");
 const codeWorkspace = path.join(__dirname, "public", "code.html");
 const adminWorkspace = path.join(__dirname, "public", "admin.html");
 const authWorkspace = path.join(__dirname, "public", "auth.html");
@@ -112,33 +110,33 @@ const settingsWorkspace = path.join(__dirname, "public", "settings.html");
 // Every visitor gets the current bot workspace. express-session provides the
 // per-browser identity consumed by /api/bot, so different visitors cannot
 // share the same in-memory BotInstance.
-app.get("/", (_req, res) => res.redirect("/token"));
-app.get("/token", (_req, res) => res.sendFile(tokenWorkspace));
+app.get("/", (_req, res) => res.redirect("/code"));
+app.get("/token", (_req, res) => res.redirect("/code"));
 app.get("/code", (_req, res) => res.sendFile(codeWorkspace));
 app.get("/admin", (req, res) => { if (!isAdminAuthenticated(req)) return res.sendFile(adminAccessWorkspace); return res.sendFile(adminWorkspace); });
 app.get("/auth", (_req, res) => res.redirect("/"));
-app.get("/settings", (_req, res) => res.redirect("/token"));
+app.get("/settings", (_req, res) => res.redirect("/code"));
 
-app.get("/connect", (_req, res) => res.redirect("/token"));
+app.get("/connect", (_req, res) => res.redirect("/code"));
 
-app.get("/dashboard", (_req, res) => res.redirect("/token"));
+app.get("/dashboard", (_req, res) => res.redirect("/code"));
 
 // The old dashboard and sign-in routes are intentionally retired. Keep
 // redirects for bookmarked links so users land in the public workspace.
-app.get("/bot-dashboard", (_req, res) => res.redirect("/token"));
-app.get("/login", (_req, res) => res.redirect("/token"));
-app.get("/servers", (_req, res) => res.redirect("/token"));
+app.get("/bot-dashboard", (_req, res) => res.redirect("/code"));
+app.get("/login", (_req, res) => res.redirect("/code"));
+app.get("/servers", (_req, res) => res.redirect("/code"));
 
 // Legacy redirect
 app.get("/pair", (_req, res) => res.redirect("/code"));
 
-app.get("/health", (req, res) => res.send("🤖 Redtech Ai SaaS is Online!"));
+app.get("/health", (req, res) => res.send("🤖 Redtech Bot SaaS is Online!"));
 
 // ── Listen ────────────────────────────────────────────────────────────────────
 app.listen(PORT, () => {
-    console.log(`🌍 Redtech Ai SaaS listening on port ${PORT}`);
+    console.log(`🌍 Redtech Bot SaaS listening on port ${PORT}`);
     redtechWebhook.start();
     botManager.restorePersisted().catch((error) => console.error("❌ Persistent bot restore failed:", error.message));
 });
 
-
+        
