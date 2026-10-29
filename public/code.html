@@ -90,8 +90,8 @@ backdrop-filter:blur(10px)
 .nav a{
 color:#d9c4e9;
 text-decoration:none;
-font-size:11px;
-font-weight:800;
+font-size:10px;
+font-weight:900;
 letter-spacing:.08em;
 padding:9px 14px;
 border-radius:999px;
@@ -132,18 +132,18 @@ box-shadow:0 20px 60px rgba(0,0,0,.5),0 0 0 1px rgba(168,85,247,.1) inset
 .logo-wrap{display:flex;justify-content:center;margin:8px 0 18px}
 
 .logo{
-width:88px;height:88px;
-border-radius:50%;
+width:90px;height:90px;
+border-radius:60%;
 background:linear-gradient(135deg,var(--red),var(--purple));
 display:flex;
 align-items:center;
 justify-content:center;
-font-size:36px;
-box-shadow:0 0 0 10px rgba(255,46,99,.15),0 0 0 20px rgba(139,92,246,.1),0 0 40px rgba(168,85,247,.5);
+font-size:40px;
+box-shadow:0 0 0 10px rgba(255,46,99,.15),0 0 0 30px rgba(139,92,246,.1),0 0 40px rgba(168,85,247,.5);
 animation:pulseRed 2.2s infinite
 }
 
-@keyframes pulseRed{
+@keyframes pulsePink{
 0%{box-shadow:0 0 0 10px rgba(255,46,99,.18),0 0 0 20px rgba(139,92,246,.08),0 0 40px rgba(255,46,99,.5)}
 50%{box-shadow:0 0 0 14px rgba(255,46,99,.12),0 0 0 28px rgba(139,92,246,.05),0 0 55px rgba(168,85,247,.7)}
 100%{box-shadow:0 0 0 10px rgba(255,46,99,.18),0 0 0 20px rgba(139,92,246,.08),0 0 40px rgba(255,46,99,.5)}
@@ -216,7 +216,7 @@ text-decoration:none
 margin-top:14px;
 padding:16px;
 border-radius:16px;
-border:1px dashed var(--purple);
+border:1px dashed var(--pink);
 background:rgba(139,92,246,.09);
 animation:reveal .4s ease both
 }
@@ -239,11 +239,11 @@ letter-spacing:.18em;
 font-weight:900;
 text-align:center;
 word-break:break-all;
-text-shadow:0 0 20px var(--purple)
+text-shadow:0 0 20px var(--pink)
 }
 
 .copy{margin-top:12px;background:transparent;border:1px solid var(--purple);color:#d8a5ff}
-.copy:hover{background:var(--purple);color:#fff}
+.copy:hover{background:var(--pink);color:#fff}
 
 .plans{margin-top:18px;padding-top:16px;border-top:1px solid var(--line)}
 
@@ -353,10 +353,10 @@ background:linear-gradient(90deg,#ff2e63,#d8a5ff,#8b5cf6);
 }
 
 .qr-description{
-font-size:11px;
-line-height:1.7;
+font-size:10px;
+line-height:1.6;
 color:var(--muted);
-margin-top:8px
+margin-top:7px
 }
 
 .qr-frame{
@@ -451,7 +451,6 @@ h1{font-size:1.65rem}
 </div>
 
 <nav class="nav">
-<a href="/token">TOKEN</a>
 <a href="/code" class="active">PAIR CODE</a>
 </nav>
 </header>
@@ -459,7 +458,7 @@ h1{font-size:1.65rem}
 <main>
 <div class="tag">[ NODE 02 / LINK ]</div>
 <h1>Generate a <span>pairing code.</span></h1>
-<p class="intro">Enter your saved Redtech token. Reusable, request new code anytime.</p>
+<p class="intro">Enter your WhatsApp number and generate one secure pairing code.</p>
 
 <section class="card">
 
@@ -467,15 +466,16 @@ h1{font-size:1.65rem}
 <div class="logo">🔑</div>
 </div>
 
-<label class="label" for="token">REDTECH TOKEN // SAVED SECRET</label>
+<label class="label" for="phone">WHATSAPP NUMBER // COUNTRY CODE INCLUDED</label>
 
 <div class="input">
-<input id="token" placeholder="REDTECH-XXXX-XXXX" autocomplete="off">
+<input id="phone" type="tel" inputmode="numeric" placeholder="254712345678" autocomplete="tel" maxlength="15">
 </div>
+<p class="hint">Enter digits only, including your country code. Example: 254712345678.</p>
 
 <button id="generate">GENERATE PAIR CODE //→</button>
 
-<a class="recovery" href="https://wa.me/254726476468?text=Hello%20Redtech%20Admin%2C%20I%20forgot%20my%20token." target="_blank" rel="noopener">FORGOT TOKEN? CHAT ADMIN →</a>
+
 
 <div id="result" class="result" hidden>
 <small>WHATSAPP PAIRING CODE</small>
@@ -483,77 +483,6 @@ h1{font-size:1.65rem}
 <button id="copy" class="copy">📋 COPY CODE</button>
 <p class="hint">In WhatsApp: Settings → Linked Devices → Link a Device → Link with phone number instead.</p>
 </div>
-
-<div class="plans">
-<div class="plans-head">
-<small>TOKEN ACCESS PLANS</small>
-<span id="payment-state" class="payment-state">CHECKING...</span>
-</div>
-
-<div class="plan-grid">
-<div class="plan">
-<strong>KSh 29</strong>
-<span>7 DAYS</span>
-<button disabled>OFFLINE</button>
-</div>
-<div class="plan">
-<strong>KSh 49</strong>
-<span>14 DAYS</span>
-<button disabled>OFFLINE</button>
-</div>
-<div class="plan">
-<strong>KSh 99</strong>
-<span>30 DAYS</span>
-<button disabled>OFFLINE</button>
-</div>
-</div>
-</div>
-</section>
-
-<!-- NEW: WHATSAPP QR CODE SCANNER -->
-
-<section class="qr-card">
-<h2 class="qr-title">📲 WHATSAPP QR SCANNER</h2>
-
-<p class="qr-description">
-Link your WhatsApp account by scanning a live QR code.
-Use this option instead of entering a pairing code.
-</p>
-
-<div class="qr-frame">
-<div id="qr-placeholder" class="qr-placeholder">
-<div style="font-size:45px;margin-bottom:10px">▦</div>
-<strong>YOUR QR CODE</strong>
-<p>Enter your Redtech token below and request a QR code.</p>
-</div>
-<img id="qr-image" alt="WhatsApp linking QR code" hidden>
-</div>
-
-<div id="qr-status" class="qr-status" role="status" aria-live="polite">
-● WAITING FOR REQUEST
-</div>
-
-<button id="generate-qr" class="qr-button">
-📲 GENERATE WHATSAPP QR
-</button>
-
-<button id="refresh-qr" class="copy" hidden>
-🔄 REFRESH QR CODE
-</button>
-
-<div class="qr-instructions">
-<strong>HOW TO SCAN</strong><br>
-1. Open WhatsApp on your phone.<br>
-2. Go to <strong>Settings → Linked Devices</strong>.<br>
-3. Tap <strong>Link a Device</strong>.<br>
-4. Scan the QR code shown above.<br>
-5. Keep this page open while linking.
-</div>
-
-<p class="qr-note">
-QR codes expire. If the code expires, request a fresh one.
-Never share your QR code or pairing code with another person.
-</p>
 </section>
 
 <div class="stats">
@@ -567,13 +496,13 @@ Never share your QR code or pairing code with another person.
 <path d="M12 0C5.37 0 0 5.37 0 12c0 2.11.55 4.11 1.6 5.85L0 24l6.3-1.65A11.9 11.9 0 0012 24c6.63 0 12-5.37 12-12S18.63 0 12 0z"/>
 </svg>
 <div>
-<div style="font-size:12px">Join our Community</div>
-<a href="https://whatsapp.com/channel/0029Vb9AwScF6sn47ClubG1Z" target="_blank" rel="noopener">WhatsApp Channel →</a>
+<div style="font-size:15px">Join our Community</div>
+<a href="https://whatsapp.com/channel/0029Vb9AwScF6sn47ClubG1Z" target="_button" rel="noopener">WhatsApp Channel →</a>
 </div>
 </div>
 
 <div style="text-align:center;color:var(--muted);font-size:10px;padding:10px 0 20px">
-© 2026 Redtech AI. All rights reserved.
+© 2026 Redtech Bot. All rights reserved.
 </div>
 </main>
 </div>
@@ -610,27 +539,27 @@ async function api(url, options = {}){
 /* ORIGINAL PAIRING CODE FUNCTION */
 
 $("#generate").onclick = async () => {
-  const token = $("#token").value.trim();
+  const phone = $("#phone").value.replace(/\D/g, "");
 
-  if (!token) return toast("Enter your token.");
+  if (phone.length < 7 || phone.length > 15) return toast("Enter a valid WhatsApp number with country code.");
 
   const button = $("#generate");
   button.disabled = true;
   button.textContent = "REQUESTING //…";
 
   try {
-    const data = await api("/api/bot/token/pair-code", {
+    const data = await api("/api/bot/quick-pair-code", {
       method: "POST",
-      body: JSON.stringify({ token })
+      body: JSON.stringify({ phone })
     });
 
     if (!data.code) {
       throw new Error("No pairing code was returned by the server.");
     }
 
-    $("#code").textContent = data.code;
+    $("#code").textContent = data.code === "CONNECTED" ? "CONNECTED" : data.code;
     $("#result").hidden = false;
-    toast("Code generated.");
+    toast(data.restored ? "WhatsApp is already connected." : "Pairing code generated.");
   } catch (error) {
     toast(error.message);
   } finally {
@@ -652,164 +581,8 @@ $("#copy").onclick = async () => {
   }
 };
 
-/*
- * NEW QR FUNCTION
- *
- * Expected backend endpoint:
- * POST /api/bot/token/qr-code
- * Body: { "token": "YOUR_TOKEN" }
- *
- * Expected JSON response:
- * { "qr": "LIVE_WHATSAPP_QR_STRING" }
- *
- * The qr value must be the actual QR payload from the WhatsApp
- * connection, not a made-up string or the pairing code.
- */
-
-let qrRequestInProgress = false;
-
-function setQRStatus(message){
-  $("#qr-status").textContent = message;
-}
-
-function clearQR(){
-  $("#qr-image").hidden = true;
-  $("#qr-image").removeAttribute("src");
-  $("#qr-placeholder").hidden = false;
-}
-
-function displayQR(data){
-  /*
-   * The server may return an already-generated image data URL
-   * or a QR payload that must be rendered into a QR image.
-   */
-  const qrValue = data.qr || data.qrCode || data.qrcode;
-  const imageValue = data.qrImage || data.dataUrl || data.image;
-
-  if (imageValue && typeof imageValue === "string" &&
-      /^data:image\/(png|jpeg|webp);base64,/i.test(imageValue)) {
-    $("#qr-image").src = imageValue;
-    $("#qr-image").hidden = false;
-    $("#qr-placeholder").hidden = true;
-    return true;
-  }
-
-  if (qrValue && typeof qrValue === "string" &&
-      /^data:image\/(png|jpeg|webp);base64,/i.test(qrValue)) {
-    $("#qr-image").src = qrValue;
-    $("#qr-image").hidden = false;
-    $("#qr-placeholder").hidden = true;
-    return true;
-  }
-
-  /*
-   * A raw WhatsApp QR payload requires a QR renderer.
-   * The server can alternatively return a generated image.
-   */
-  if (typeof qrValue === "string" && qrValue.length > 0) {
-    if (typeof window.QRCode === "undefined") {
-      throw new Error(
-        "QR payload received, but the QR renderer is unavailable. " +
-        "Configure a QR image response or load a QR rendering library."
-      );
-    }
-
-    const canvas = document.createElement("canvas");
-
-    window.QRCode.toCanvas(canvas, qrValue, {
-      width: 230,
-      margin: 2,
-      errorCorrectionLevel: "M"
-    }, error => {
-      if (error) {
-        setQRStatus("● COULD NOT RENDER QR");
-        toast("Could not display the QR code.");
-        return;
-      }
-
-      $("#qr-image").src = canvas.toDataURL("image/png");
-      $("#qr-image").hidden = false;
-      $("#qr-placeholder").hidden = true;
-    });
-
-    return true;
-  }
-
-  return false;
-}
-
-async function requestQR(){
-  const token = $("#token").value.trim();
-
-  if (!token) {
-    toast("Enter your Redtech token first.");
-    $("#token").focus();
-    return;
-  }
-
-  if (qrRequestInProgress) return;
-
-  qrRequestInProgress = true;
-
-  const generateButton = $("#generate-qr");
-  const refreshButton = $("#refresh-qr");
-
-  generateButton.disabled = true;
-  refreshButton.disabled = true;
-  generateButton.textContent = "CONNECTING TO WHATSAPP...";
-  setQRStatus("● REQUESTING LIVE QR CODE");
-
-  try {
-    /*
-     * This route must be implemented by your existing backend.
-     * It should return the real QR from the WhatsApp socket.
-     */
-    const data = await api("/api/bot/token/qr-code", {
-      method: "POST",
-      body: JSON.stringify({ token })
-    });
-
-    const displayed = displayQR(data);
-
-    if (!displayed) {
-      throw new Error(
-        data.error ||
-        "The server did not return a QR code. Check your backend QR endpoint."
-      );
-    }
-
-    setQRStatus("● QR RECEIVED — SCAN WITH WHATSAPP");
-    refreshButton.hidden = false;
-    toast("QR code received. Scan it using WhatsApp Linked Devices.");
-  } catch (error) {
-    setQRStatus("● QR REQUEST FAILED");
-    toast(error.message);
-  } finally {
-    qrRequestInProgress = false;
-    generateButton.disabled = false;
-    refreshButton.disabled = false;
-    generateButton.textContent = "📲 GENERATE WHATSAPP QR";
-  }
-}
-
-$("#generate-qr").addEventListener("click", requestQR);
-$("#refresh-qr").addEventListener("click", requestQR);
-
-/* ORIGINAL PAYMENT STATUS FUNCTION */
-
-fetch("/api/bot/payment-config")
-  .then(response => response.json())
-  .then(config => {
-    $("#payment-state").textContent =
-      config.enabled ? "MPESA READY" : "COMING SOON";
-  })
-  .catch(() => {
-    $("#payment-state").textContent = "OFFLINE";
-  });
 </script>
 
-<!-- QR renderer for raw WhatsApp QR payloads -->
-<script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.4/build/qrcode.min.js"></script>
 
 </body>
   </html>
