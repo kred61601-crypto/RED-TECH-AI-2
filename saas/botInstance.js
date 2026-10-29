@@ -10,7 +10,6 @@
 
 const path = require("path");
 const fs = require("fs");
-const zlib = require("zlib");
 
 const { DisconnectReason, useMultiFileAuthState, makeCacheableSignalKeyStore, Browsers, fetchLatestBaileysVersion } = require("@whiskeysockets/baileys");
 const makeWASocket = require("@whiskeysockets/baileys").default;
@@ -53,8 +52,6 @@ class BotInstance {
         this.pairingRestartInProgress = false;
         this.pairingCodeRequested = false;
         this.pendingPairingNumber = null;
-        this.sessionIdFailed = false;
-        this.sessionIdInvalid = false;
         this.sessionInvalidated = false;
         this.restoredFromDatabase = false;
 
@@ -63,7 +60,6 @@ class BotInstance {
         this.newsletterName = "Redtech Ai Updates";
 
         // User's WhatsApp number (for pairing)
-        this.sessionId = options.sessionId || null;
     }
 
     // ── Context runner ─────────────────────────────────────────────────────────
@@ -122,8 +118,6 @@ class BotInstance {
 
             this.pendingPairingNumber = phone;
             this.pairingCodeRequested = false;
-            this.sessionId = null;
-            this.sessionIdFailed = false;
 
             // Wipe stale session
             try {
@@ -164,13 +158,6 @@ class BotInstance {
         }
     }
 
-    getSessionId() {
-        const credsPath = path.join(this.sessionDir, "creds.json");
-        if (!fs.existsSync(credsPath) || fs.statSync(credsPath).size < 10) return null;
-        const creds = fs.readFileSync(credsPath, "utf-8");
-        return "REDTECH~" + Buffer.from(creds).toString("base64");
-    }
-
     waitForSessionState(timeoutMs = 15000) {
         if (this.status === "online") return Promise.resolve("online");
         if (this.sessionInvalidated) return Promise.resolve("invalid");
@@ -185,49 +172,6 @@ class BotInstance {
         });
     }
 
-    restoreSessionId(sessionId) {
-        const rawId = sessionId.trim();
-        const encoded = rawId.includes("~") ? rawId.split("~")[1] : rawId;
-        const buffer = Buffer.from(encoded, "base64");
-
-        const decodeBuffer = (buf) => {
-            try { return zlib.gunzipSync(buf).toString("utf-8"); } catch (_) {
-                try { return zlib.inflateSync(buf).toString("utf-8"); } catch (_) {
-                    return buf.toString("utf-8");
-                }
-            }
-        };
-
-        let credsJson = decodeBuffer(buffer);
-        if (!credsJson.includes("{") && /^[a-zA-Z0-9+/=]+$/.test(credsJson.trim())) {
-            credsJson = decodeBuffer(Buffer.from(credsJson.trim(), "base64"));
-        }
-
-        let finalJson = null;
-        for (let i = 0; i < credsJson.length; i++) {
-            if (credsJson[i] === "{") {
-                try {
-                    const candidate = credsJson.substring(i, credsJson.lastIndexOf("}") + 1);
-                    if (candidate.includes("noiseKey") || candidate.includes("creds")) {
-                        JSON.parse(candidate);
-                        finalJson = candidate;
-                        break;
-                    }
-                } catch (_) {}
-            }
-        }
-
-        if (!finalJson) throw new Error("Could not find valid credentials in that Session ID.");
-
-        const parsed = JSON.parse(finalJson);
-        const creds = parsed.creds || (parsed.noiseKey ? parsed : null);
-        if (!creds) throw new Error("No credentials found inside Session ID.");
-
-        creds.registered = true;
-        if (!fs.existsSync(this.sessionDir)) fs.mkdirSync(this.sessionDir, { recursive: true });
-        fs.writeFileSync(path.join(this.sessionDir, "creds.json"), JSON.stringify(creds));
-    }
-
     // ── Core connection logic ─────────────────────────────────────────────────
 
     async _connectionLogic() {
@@ -235,21 +179,6 @@ class BotInstance {
         if (this.isReconnecting) return;
         this.isReconnecting = true;
         this.status = "connecting";
-
-        // SESSION_ID restore
-        if (this.sessionId && !this.sessionIdInvalid) {
-            const credsPath = path.join(this.sessionDir, "creds.json");
-            const sessionExists = fs.existsSync(credsPath) && fs.statSync(credsPath).size > 10;
-            if (!sessionExists) {
-                console.log(`[${this.userId}] Restoring session from SESSION_ID...`);
-                try {
-                    this.restoreSessionId(this.sessionId);
-                    console.log(`[${this.userId}] ✅ Session restored.`);
-                } catch (e) {
-                    console.error(`[${this.userId}] ❌ Session restore failed:`, e.message);
-                }
-            }
-        }
 
         // Railway replaces containers during redeploys. Keep Baileys creds and
         // signal keys in MongoDB whenever it is available, and retain the
@@ -260,7 +189,7 @@ class BotInstance {
             const { initDb, isOnline } = require("../redtech/db");
             await initDb();
             if (isOnline()) {
-                const { useDatabaseAuthState } = require("../firebox/dbAuth");
+                const { useDatabaseAuthState } = require("../redtech/dbAuth");
                 authState = await useDatabaseAuthState(`saas_${this.userId}`);
                 usingDatabaseAuth = true;
                 console.log(`[${this.userId}] Using MongoDB auth state.`);
@@ -279,7 +208,7 @@ class BotInstance {
         this.restoredFromDatabase = usingDatabaseAuth && !!state.creds.registered;
 
         // Fresh login cleanup
-        if (!this.hasWipedSessionOnStartup && !state.creds.registered && !this.sessionId) {
+        if (!this.hasWipedSessionOnStartup && !state.creds.registered) {
             this.hasWipedSessionOnStartup = true;
             try {
                 if (fs.existsSync(this.sessionDir)) {
@@ -363,17 +292,6 @@ class BotInstance {
             return await originalSendMessage(jid, content, options);
         };
 
-        // SESSION_ID watchdog
-        if (this.sessionId && !this.sessionIdInvalid) {
-            const wdTimer = setTimeout(() => {
-                if (!sock.user) {
-                    console.log(`[${this.userId}] ⚠️ Session ID failed to connect within 30s. Enabling QR fallback.`);
-                    this.sessionIdFailed = true;
-                }
-            }, 30000);
-            if (wdTimer.unref) wdTimer.unref();
-        }
-
         sock.ev.on("creds.update", saveCreds);
 
         sock.ev.on("connection.update", async (update) => {
@@ -412,7 +330,7 @@ class BotInstance {
                 }
             }
 
-            if (qr && (!this.sessionId || this.sessionIdFailed) && !usePairingCode) {
+            if (qr && !usePairingCode) {
                 console.log(`[${this.userId}] 📱 QR code available`);
             }
 
@@ -509,13 +427,11 @@ class BotInstance {
                     // MongoDB credentials only creates an endless "Logging in"
                     // loop, so remove the persisted auth and wait for pairing.
                     try {
-                        const { clearDatabaseAuthState } = require("../firebox/dbAuth");
+                        const { clearDatabaseAuthState } = require("../redtech/dbAuth");
                         await clearDatabaseAuthState(`saas_${this.userId}`);
                     } catch (error) {
                         console.error(`[${this.userId}] Failed to clear logged-out auth:`, error.message);
                     }
-                    this.sessionId = null;
-                    this.sessionIdInvalid = true;
                     this.sessionInvalidated = true;
                     this.wipeSession();
                     this.hasWipedSessionOnStartup = false;
@@ -544,10 +460,6 @@ class BotInstance {
                 if (this.consecutiveFailures >= 5) {
                     this.consecutiveFailures = 0;
                     this.hasWipedSessionOnStartup = false;
-                    if (this.sessionId) {
-                        this.sessionIdInvalid = true;
-                        this.sessionId = null;
-                    }
                     this.wipeSession();
                     setTimeout(() => this._connectionLogic(), 5000);
                 } else {
