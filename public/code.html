@@ -1,137 +1,1242 @@
-<!doctype html>
+
+<!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>REDTECH-AI // Pair Code</title>
-<style>
-*{box-sizing:border-box;margin:0;padding:0}
-body{
-min-height:100vh;
-background:#0c0614;
-background-image:radial-gradient(at 20% 10%,#2a1248 0%,transparent 50%),radial-gradient(at 90% 20%,#3a1a5c 0%,transparent 40%);
-color:#fff;
-font-family:system-ui;
-display:flex;justify-content:center;padding:14px
-}
-.wrap{width:100%;max-width:460px}
-.top{
-display:flex;justify-content:space-between;align-items:center;
-background:rgba(255,255,255,.06);
-border:1px solid rgba(168,85,247,.2);
-border-radius:16px;padding:10px 14px;
-backdrop-filter:blur(20px)
-}
-.brand{color:#a78bfa;font-weight:900;letter-spacing:.1em;font-size:13px;display:flex;gap:8px;align-items:center}
-.brand svg{width:26px;height:26px}
-.menu-btn{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);width:36px;height:36px;border-radius:10px;display:grid;place-items:center;color:#fff;font-size:18px}
-.card{
-background:rgba(25,14,38,.95);
-border:1px solid rgba(168,85,247,.3);
-border-radius:26px;padding:22px;margin-top:18px;
-box-shadow:0 20px 60px rgba(0,0,0,.5)
-}
-.logo-wrap{display:flex;justify-content:center;margin:6px 0 14px}
-.logo{width:80px;height:80px;border-radius:50%;background:linear-gradient(135deg,#ff2e63,#8b5cf6);display:grid;place-items:center;font-size:38px;box-shadow:0 0 0 12px rgba(255,46,99,.15),0 0 0 28px rgba(139,92,246,.08)}
-h1{text-align:center;font-size:28px;font-weight:900}
-.sub{text-align:center;color:#b9a0d0;font-size:13px;margin-top:6px}
-.select-box{
-margin-top:16px;
-display:flex;justify-content:space-between;align-items:center;
-background:#1d112c;border:1px solid rgba(168,85,247,.3);border-radius:12px;padding:12px 14px
-}
-.badge{display:flex;gap:8px;align-items:center;font-size:11px}
-.dot{width:8px;height:8px;background:#22c55e;border-radius:50%;box-shadow:0 0 8px #22c55e}
-.limit{display:flex;gap:6px;align-items:center;color:#c4a0ff;font-size:12px}
-.select-btn{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);color:#fff;border-radius:8px;padding:6px 12px;font-size:12px}
-.info{
-margin-top:12px;background:rgba(16,185,129,.12);border:1px solid rgba(16,185,129,.3);border-radius:12px;padding:12px;color:#a7f3d0;font-size:12px;line-height:1.5
-}
-.info a{color:#6ee7b7;font-weight:700}
-.label{margin-top:16px;display:block;color:#d8b4fe;font-size:11px;letter-spacing:.1em;font-weight:800}
-.input{margin-top:8px;display:flex;align-items:center;background:#160e20;border:1px solid rgba(168,85,247,.3);border-radius:14px;padding:12px 14px}
-.input input{flex:1;background:transparent;border:0;outline:0;color:#fff;font-size:15px;font-weight:700;letter-spacing:.05em}
-.btn{
-width:100%;margin-top:14px;padding:14px;border:0;border-radius:14px;
-background:linear-gradient(90deg,#6366f1,#a855f7);color:#fff;font-weight:900;letter-spacing:.08em;font-size:13px;cursor:pointer
-}
-.pair-box{margin-top:14px;background:#1a102a;border:1px dashed rgba(168,85,247,.4);border-radius:14px;padding:16px;text-align:center;display:none}
-.pair-box.show{display:block}
-.code{font-size:28px;font-weight:900;letter-spacing:.15em;margin-top:8px;color:#fff}
-.servers{
-display:none;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px;max-height:320px;overflow:auto
-}
-.servers.show{display:grid}
-.servers button{background:#1e1330;border:1px solid rgba(168,85,247,.25);color:#c9b3e6;padding:10px;border-radius:10px;font-size:12px}
-.servers button.active{background:linear-gradient(90deg,#ff2e63,#8b5cf6);color:#fff}
-.small{margin-top:14px;color:#8d7aa3;font-size:11px;line-height:1.6}
-.faq{margin-top:16px;border-top:1px solid rgba(255,255,255,.08);padding-top:12px}
-.faq h3{font-size:13px;color:#e9d5ff;margin-bottom:8px}
-</style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#090713">
+  <meta name="description" content="REDTECH-AI WhatsApp pairing portal. Generate your WhatsApp pairing code easily.">
+  <title>REDTECH-AI | WhatsApp Pairing</title>
+
+  <style>
+    :root {
+      --bg: #090713;
+      --panel: #100d20;
+      --panel2: #17122b;
+      --purple: #9147ff;
+      --purple2: #6828dc;
+      --text: #f8f5ff;
+      --muted: #aaa3bd;
+      --border: rgba(174, 125, 255, .17);
+      --green: #39e69b;
+      --danger: #ff5378;
+      --shadow: 0 15px 45px rgba(0,0,0,.28);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      min-height: 100vh;
+      background:
+        radial-gradient(ellipse at 50% -15%, rgba(117,54,213,.19), transparent 48%),
+        var(--bg);
+      color: var(--text);
+      font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      font-size: 14px;
+      overflow-x: hidden;
+    }
+
+    button, input, select {
+      font: inherit;
+    }
+
+    button {
+      cursor: pointer;
+    }
+
+    a {
+      color: inherit;
+      text-decoration: none;
+    }
+
+    .topbar {
+      width: 100%;
+      height: 68px;
+      padding: 0 6%;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--border);
+      background: rgba(9,7,19,.86);
+      backdrop-filter: blur(16px);
+      position: sticky;
+      top: 0;
+      z-index: 50;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-weight: 850;
+      letter-spacing: .7px;
+      font-size: 17px;
+    }
+
+    .brand-icon {
+      width: 34px;
+      height: 34px;
+      border-radius: 11px;
+      display: grid;
+      place-items: center;
+      color: white;
+      background: linear-gradient(145deg, #b36bff, #6924d9);
+      box-shadow: 0 0 22px rgba(145,71,255,.38);
+    }
+
+    .brand-icon svg {
+      width: 20px;
+      height: 20px;
+    }
+
+    .brand span {
+      color: #bd8aff;
+    }
+
+    .nav-right {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .nav-btn {
+      width: 37px;
+      height: 37px;
+      border: 1px solid var(--border);
+      background: var(--panel2);
+      color: white;
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      font-size: 17px;
+      transition: .2s;
+    }
+
+    .nav-btn:hover {
+      border-color: var(--purple);
+      transform: translateY(-2px);
+    }
+
+    .menu-panel {
+      display: none;
+      position: absolute;
+      right: 6%;
+      top: 59px;
+      width: 205px;
+      padding: 9px;
+      background: #171128;
+      border: 1px solid var(--border);
+      border-radius: 13px;
+      box-shadow: var(--shadow);
+    }
+
+    .menu-panel.open {
+      display: block;
+      animation: menuIn .2s ease;
+    }
+
+    .menu-panel a {
+      display: block;
+      padding: 11px;
+      color: #d8d0e9;
+      border-radius: 8px;
+      font-size: 13px;
+    }
+
+    .menu-panel a:hover {
+      background: rgba(145,71,255,.16);
+      color: white;
+    }
+
+    @keyframes menuIn {
+      from { opacity: 0; transform: translateY(-7px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .page {
+      width: min(100% - 28px, 440px);
+      margin: 35px auto 65px;
+    }
+
+    .main-card {
+      background: linear-gradient(155deg, rgba(24,18,44,.98), rgba(14,11,27,.99));
+      border: 1px solid var(--border);
+      border-radius: 19px;
+      padding: 25px 22px 23px;
+      box-shadow: var(--shadow);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .main-card::before {
+      content: "";
+      position: absolute;
+      top: -115px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 270px;
+      height: 200px;
+      background: rgba(137,67,255,.12);
+      filter: blur(55px);
+      pointer-events: none;
+    }
+
+    .hero {
+      text-align: center;
+      position: relative;
+      z-index: 1;
+      margin-bottom: 23px;
+    }
+
+    .animated-logo {
+      width: 79px;
+      height: 79px;
+      margin: 0 auto 13px;
+      position: relative;
+      display: grid;
+      place-items: center;
+      border-radius: 50%;
+      background: radial-gradient(circle, #30165d, #160e2c 72%);
+      border: 1px solid rgba(181,132,255,.48);
+      box-shadow:
+        0 0 18px rgba(145,71,255,.28),
+        inset 0 0 20px rgba(145,71,255,.12);
+      animation: logoFloat 3s ease-in-out infinite;
+    }
+
+    .animated-logo::before,
+    .animated-logo::after {
+      content: "";
+      position: absolute;
+      inset: -6px;
+      border-radius: 50%;
+      border: 1px solid transparent;
+      border-top-color: #b77cff;
+      border-right-color: rgba(145,71,255,.45);
+      animation: logoSpin 4s linear infinite;
+    }
+
+    .animated-logo::after {
+      inset: -11px;
+      border-top-color: rgba(145,71,255,.25);
+      border-bottom-color: #8b48ff;
+      animation-direction: reverse;
+      animation-duration: 6s;
+    }
+
+    .animated-logo svg {
+      width: 39px;
+      height: 39px;
+      fill: #fff;
+      filter: drop-shadow(0 0 9px #a66bff);
+      animation: boltGlow 1.8s ease-in-out infinite alternate;
+    }
+
+    @keyframes logoSpin {
+      to { transform: rotate(360deg); }
+    }
+
+    @keyframes logoFloat {
+      0%,100% { transform: translateY(0); }
+      50% { transform: translateY(-5px); }
+    }
+
+    @keyframes boltGlow {
+      from { filter: drop-shadow(0 0 4px #9a5cff); }
+      to { filter: drop-shadow(0 0 15px #c49aff); }
+    }
+
+    .hero h1 {
+      font-size: 22px;
+      font-weight: 850;
+      letter-spacing: .5px;
+      margin-bottom: 6px;
+    }
+
+    .hero h1 span {
+      color: #bd8aff;
+    }
+
+    .hero p {
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .section-label {
+      display: block;
+      color: #ddd4ed;
+      font-size: 12px;
+      font-weight: 700;
+      margin-bottom: 9px;
+    }
+
+    .server-card {
+      border: 1px solid var(--border);
+      background: rgba(9,7,19,.48);
+      border-radius: 12px;
+      padding: 13px;
+      margin-bottom: 13px;
+    }
+
+    .server-heading {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+
+    .server-name {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      font-weight: 750;
+      font-size: 13px;
+    }
+
+    .server-icon {
+      width: 34px;
+      height: 34px;
+      border-radius: 9px;
+      display: grid;
+      place-items: center;
+      background: rgba(145,71,255,.17);
+      color: #c69dff;
+      font-size: 17px;
+    }
+
+    .server-stats {
+      display: flex;
+      gap: 14px;
+      font-size: 10px;
+      color: var(--muted);
+    }
+
+    .server-stats b {
+      display: block;
+      color: var(--green);
+      font-size: 11px;
+      margin-top: 3px;
+    }
+
+    .server-stats .limit b {
+      color: #d4b7ff;
+    }
+
+    .server-select {
+      width: 100%;
+      padding: 11px 12px;
+      color: white;
+      background: #0d0a19;
+      border: 1px solid rgba(174,125,255,.25);
+      border-radius: 8px;
+      outline: none;
+    }
+
+    .server-select:focus,
+    .phone-input:focus {
+      border-color: var(--purple);
+      box-shadow: 0 0 0 3px rgba(145,71,255,.12);
+    }
+
+    .server-select option {
+      background: #171128;
+      color: white;
+    }
+
+    .info-box {
+      border: 1px solid rgba(145,71,255,.22);
+      background: rgba(112,58,190,.09);
+      border-radius: 10px;
+      padding: 12px;
+      margin-bottom: 17px;
+    }
+
+    .info-top {
+      display: flex;
+      align-items: flex-start;
+      gap: 9px;
+      color: #d7c9ef;
+      font-size: 11px;
+      line-height: 1.65;
+    }
+
+    .info-symbol {
+      color: #bd8aff;
+      font-size: 17px;
+    }
+
+    .instructions-toggle {
+      margin-top: 10px;
+      color: #c69bff;
+      background: none;
+      border: none;
+      font-size: 11px;
+      font-weight: 750;
+    }
+
+    .instructions {
+      display: none;
+      padding-top: 12px;
+      margin-top: 10px;
+      border-top: 1px solid var(--border);
+      color: #c6bdd6;
+      font-size: 11px;
+      line-height: 1.8;
+    }
+
+    .instructions.show {
+      display: block;
+      animation: menuIn .2s ease;
+    }
+
+    .instructions h4 {
+      color: white;
+      margin: 9px 0 5px;
+      font-size: 11px;
+    }
+
+    .instructions ol {
+      padding-left: 19px;
+    }
+
+    .form-group {
+      margin-bottom: 14px;
+    }
+
+    .phone-input {
+      width: 100%;
+      background: #0b0916;
+      border: 1px solid rgba(174,125,255,.25);
+      border-radius: 9px;
+      padding: 13px;
+      outline: none;
+      color: white;
+      font-size: 14px;
+      transition: .2s;
+    }
+
+    .phone-input::placeholder {
+      color: #777087;
+    }
+
+    .hint {
+      color: #9189a4;
+      font-size: 10px;
+      margin-top: 7px;
+    }
+
+    .generate-btn {
+      width: 100%;
+      border: none;
+      border-radius: 9px;
+      padding: 13px;
+      color: white;
+      font-size: 13px;
+      font-weight: 800;
+      letter-spacing: .2px;
+      background: linear-gradient(110deg, #a14dff, #7127dd);
+      box-shadow: 0 6px 20px rgba(122,49,226,.25);
+      transition: .2s;
+    }
+
+    .generate-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 9px 25px rgba(122,49,226,.4);
+    }
+
+    .generate-btn:disabled {
+      opacity: .6;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .result-box {
+      display: none;
+      text-align: center;
+      background: rgba(57,230,155,.06);
+      border: 1px solid rgba(57,230,155,.25);
+      border-radius: 11px;
+      padding: 15px;
+      margin-top: 15px;
+    }
+
+    .result-box.show {
+      display: block;
+      animation: menuIn .25s ease;
+    }
+
+    .result-title {
+      color: #b9f5d9;
+      font-size: 11px;
+      margin-bottom: 9px;
+    }
+
+    .pair-code {
+      font-size: 26px;
+      font-weight: 900;
+      letter-spacing: 5px;
+      color: white;
+      margin: 8px 0 13px;
+      overflow-wrap: anywhere;
+    }
+
+    .copy-btn {
+      background: rgba(57,230,155,.14);
+      border: 1px solid rgba(57,230,155,.3);
+      color: #8df1c1;
+      border-radius: 7px;
+      padding: 9px 20px;
+      font-size: 11px;
+      font-weight: 750;
+    }
+
+    .message {
+      display: none;
+      padding: 10px;
+      border-radius: 8px;
+      margin-top: 12px;
+      font-size: 11px;
+      line-height: 1.5;
+    }
+
+    .message.show {
+      display: block;
+    }
+
+    .message.error {
+      color: #ff9bae;
+      background: rgba(255,83,120,.09);
+      border: 1px solid rgba(255,83,120,.2);
+    }
+
+    .message.success {
+      color: #8df1c1;
+      background: rgba(57,230,155,.08);
+      border: 1px solid rgba(57,230,155,.2);
+    }
+
+    .about-section,
+    .faq-section,
+    .disclaimer,
+    .business-section {
+      margin-top: 27px;
+    }
+
+    .content-card {
+      background: rgba(20,15,36,.78);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 17px;
+    }
+
+    .content-card h2 {
+      font-size: 16px;
+      margin-bottom: 9px;
+    }
+
+    .content-card h2 span {
+      color: #bd8aff;
+    }
+
+    .content-card p {
+      font-size: 12px;
+      line-height: 1.8;
+      color: var(--muted);
+    }
+
+    .section-heading {
+      font-size: 17px;
+      margin-bottom: 13px;
+      text-align: center;
+    }
+
+    .faq-item {
+      border-bottom: 1px solid var(--border);
+    }
+
+    .faq-item:last-child {
+      border-bottom: 0;
+    }
+
+    .faq-question {
+      width: 100%;
+      padding: 13px 0;
+      text-align: left;
+      background: none;
+      border: 0;
+      color: white;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .faq-answer {
+      display: none;
+      color: var(--muted);
+      font-size: 11px;
+      line-height: 1.8;
+      padding: 0 0 13px;
+    }
+
+    .faq-item.active .faq-answer {
+      display: block;
+    }
+
+    .faq-item.active .faq-arrow {
+      transform: rotate(180deg);
+    }
+
+    .faq-arrow {
+      color: #bd8aff;
+      transition: .2s;
+    }
+
+    .disclaimer .content-card {
+      border-color: rgba(255,184,92,.2);
+    }
+
+    .disclaimer h2 {
+      color: #ffc878;
+    }
+
+    .business-intro {
+      text-align: center;
+      font-size: 12px;
+      color: var(--muted);
+      margin: -5px 0 14px;
+    }
+
+    .business-grid {
+      display: grid;
+      gap: 11px;
+    }
+
+    .business-card {
+      padding: 15px;
+      background: rgba(20,15,36,.78);
+      border: 1px solid var(--border);
+      border-radius: 11px;
+    }
+
+    .business-card .business-icon {
+      font-size: 20px;
+      margin-bottom: 9px;
+    }
+
+    .business-card h3 {
+      font-size: 13px;
+      margin-bottom: 6px;
+    }
+
+    .business-card p {
+      color: var(--muted);
+      font-size: 11px;
+      line-height: 1.7;
+    }
+
+    .community {
+      margin-top: 25px;
+      padding: 15px;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      background: rgba(20,15,36,.78);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+
+    .community h3 {
+      font-size: 12px;
+      margin-bottom: 4px;
+    }
+
+    .community p {
+      color: var(--muted);
+      font-size: 10px;
+    }
+
+    .community a {
+      background: #167d54;
+      color: white;
+      padding: 9px 12px;
+      border-radius: 7px;
+      font-size: 10px;
+      font-weight: 750;
+      white-space: nowrap;
+    }
+
+    footer {
+      text-align: center;
+      padding: 28px 12px;
+      color: #827a96;
+      font-size: 10px;
+      line-height: 2;
+    }
+
+    footer strong {
+      color: #bd8aff;
+    }
+
+    .light-mode {
+      --bg: #f3effb;
+      --panel: #fff;
+      --panel2: #eee6fa;
+      --text: #211833;
+      --muted: #6e657e;
+      --border: rgba(104,40,220,.18);
+    }
+
+    .light-mode .topbar {
+      background: rgba(243,239,251,.92);
+    }
+
+    .light-mode .main-card,
+    .light-mode .content-card,
+    .light-mode .business-card,
+    .light-mode .community {
+      background: #fff;
+    }
+
+    .light-mode .hero h1,
+    .light-mode .section-label,
+    .light-mode .faq-question,
+    .light-mode .business-card h3,
+    .light-mode .content-card h2 {
+      color: #211833;
+    }
+
+    .light-mode .server-card,
+    .light-mode .phone-input,
+    .light-mode .server-select {
+      background: #f7f3fc;
+      color: #211833;
+    }
+
+    .light-mode .server-select option {
+      background: white;
+      color: #211833;
+    }
+
+    .light-mode .info-top {
+      color: #514567;
+    }
+
+    .light-mode .pair-code {
+      color: #211833;
+    }
+
+    @media (max-width: 480px) {
+      .topbar {
+        height: 61px;
+        padding: 0 17px;
+      }
+
+      .page {
+        margin-top: 22px;
+      }
+
+      .main-card {
+        padding: 23px 17px;
+      }
+
+      .hero h1 {
+        font-size: 20px;
+      }
+    }
+  </style>
 </head>
+
 <body>
-<div class="wrap">
-<div class="top">
-<div class="brand"><svg viewBox="0 0 24 30"><path fill="#ff2e63" d="M12 1C13 7 20 9 20 17a8 8 0 0 1-16 0c0-4 2-7 5-10 0 4 2 5 3 6 2-3 1-7 0-12Z"/></svg> REDTECH-AI</div>
-<div class="menu-btn">☰</div>
-</div>
 
-<div class="card">
-<div class="logo-wrap"><div class="logo">⚡</div></div>
-<h1>REDTECH-AI</h1>
-<div class="sub">Generate Your Pairing Code</div>
+<header class="topbar">
+  <a href="#" class="brand">
+    <div class="brand-icon">
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M13.2 1 4.8 13h5.7l-.8 10L19.2 10h-5.8z" fill="currentColor"/>
+      </svg>
+    </div>
+    REDTECH<span>-AI</span>
+  </a>
 
-<div class="select-box">
-<div class="badge"><span class="dot"></span> Select Server <span style="color:#22c55e;font-size:9px;font-weight:800">ACTIVE</span></div>
-<div class="limit">◐ LIMIT <span id="limit">50</span> <button class="select-btn" id="openServers">▼ Select</button></div>
-</div>
+  <div class="nav-right">
+    <button class="nav-btn" id="themeButton" aria-label="Change theme">◐</button>
+    <button class="nav-btn" id="menuButton" aria-label="Open menu">☰</button>
+  </div>
 
-<div class="servers" id="serverGrid"></div>
+  <nav class="menu-panel" id="menuPanel">
+    <a href="#pairing">Pair Your WhatsApp</a>
+    <a href="#about">About REDTECH-AI</a>
+    <a href="#faq">Frequently Asked Questions</a>
+    <a href="#services">Services</a>
+    <a href="#community">Community Channel</a>
+  </nav>
+</header>
 
-<div class="info">
-<span>🛈</span> Select a server, enter your WhatsApp number, and click <b>Generate Pair Code</b> to get your 8-digit pairing code.<br>
-<u>Show instructions ▼</u>
-</div>
+<main class="page">
 
-<label class="label">WhatsApp Number</label>
-<div class="input">
-<span style="margin-right:8px">📞</span>
-<input id="phone" placeholder="2547xxxxxxx" value="254">
-</div>
-<div style="color:#8d7aa3;font-size:10px;margin-top:6px">📍 Include country code (e.g. 254 for Kenya)</div>
+  <section class="main-card" id="pairing">
 
-<button class="btn" id="gen">🔑 Generate Pair Code</button>
+    <div class="hero">
+      <div class="animated-logo">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M13.2 1 4.8 13h5.7l-.8 10L19.2 10h-5.8z"/>
+        </svg>
+      </div>
 
-<div class="pair-box" id="result">
-<small style="color:#c084fc;letter-spacing:.15em;font-size:9px">YOUR PAIRING CODE</small>
-<div class="code" id="code">JAWADXMD</div>
-<button class="btn" style="background:transparent;border:1px solid #8b5cf6;margin-top:10px" onclick="navigator.clipboard.writeText(document.getElementById('code').innerText)">Copy Code</button>
-<div id="timer" style="color:#22c55e;margin-top:8px;font-size:12px">Wait 30s</div>
-</div>
+      <h1>REDTECH<span>-AI</span></h1>
+      <p>Generate Your Pairing Code</p>
+    </div>
 
-<div class="small">
-<b>What is REDTECH-AI?</b><br>
-REDTECH-AI is a free, open-source WhatsApp bot built by Redtech. It connects to WhatsApp using a pairing code, so there's no need to scan a QR code or install any extra app. Just enter your number above to get started.
-</div>
-</div>
-</div>
+    <label class="section-label" for="serverSelect">Select Server</label>
+
+    <div class="server-card">
+      <div class="server-heading">
+        <div class="server-name">
+          <div class="server-icon">▣</div>
+          <span>Select Server</span>
+        </div>
+
+        <div class="server-stats">
+          <div>
+            ACTIVE
+            <b>● Online</b>
+          </div>
+          <div class="limit">
+            LIMIT
+            <b>50</b>
+          </div>
+        </div>
+      </div>
+
+      <select class="server-select" id="serverSelect">
+        <option value="">Select a Server (1-200)</option>
+        <script>
+          for (let i = 1; i <= 200; i++) {
+            document.write('<option value="' + i + '">Server ' + String(i).padStart(3, '0') + '</option>');
+          }
+        </script>
+      </select>
+    </div>
+
+    <div class="info-box">
+      <div class="info-top">
+        <span class="info-symbol">ⓘ</span>
+        <span>
+          Select a server, enter your WhatsApp number, and click Generate Pair Code to get your 8-digit pairing code.
+        </span>
+      </div>
+
+      <button class="instructions-toggle" id="instructionsToggle">
+        Show Instructions ▼
+      </button>
+
+      <div class="instructions" id="instructions">
+        <h4>Automatic Pairing</h4>
+        <ol>
+          <li>You will receive a notification on your Android or iPhone.</li>
+          <li>Tap the notification and enter the pairing code shown above.</li>
+        </ol>
+
+        <h4>Manual Pairing</h4>
+        <p>No problem — you can complete the pairing manually:</p>
+        <ol>
+          <li>Open WhatsApp on your phone.</li>
+          <li>On Android: tap the ⋮ three dots in the top-right, then tap Linked devices.</li>
+          <li>On iPhone: tap Settings in the bottom-right, then tap Linked devices.</li>
+          <li>Tap Link a device, then tap Link with phone number instead.</li>
+          <li>Enter the code shown above on your phone to complete pairing.</li>
+        </ol>
+      </div>
+    </div>
+
+    <form id="pairForm">
+      <div class="form-group">
+        <label class="section-label" for="phoneInput">WhatsApp Number</label>
+        <input
+          class="phone-input"
+          id="phoneInput"
+          type="tel"
+          inputmode="numeric"
+          autocomplete="tel"
+          placeholder="e.g. 254712345678"
+          maxlength="15"
+          required
+        >
+        <p class="hint">Include your country code. Do not use +, spaces or dashes.</p>
+      </div>
+
+      <button type="submit" class="generate-btn" id="generateButton">
+        Generate Pair Code
+      </button>
+    </form>
+
+    <div class="message" id="messageBox"></div>
+
+    <div class="result-box" id="resultBox">
+      <div class="result-title">Your pairing code will appear here</div>
+      <div class="pair-code" id="pairCode">--------</div>
+      <button type="button" class="copy-btn" id="copyButton">Copy Code</button>
+    </div>
+
+  </section>
+
+  <section class="about-section" id="about">
+    <div class="content-card">
+      <h2>What is <span>REDTECH-AI?</span></h2>
+      <p>
+        REDTECH-AI is a WhatsApp automation bot designed to make messaging
+        easier. Connect your WhatsApp account using a pairing code without
+        needing to scan a QR code. Enter your number, generate your code,
+        and follow the linking instructions above.
+      </p>
+    </div>
+  </section>
+
+  <section class="faq-section" id="faq">
+    <h2 class="section-heading">Frequently Asked Questions</h2>
+
+    <div class="content-card">
+      <div class="faq-item">
+        <button class="faq-question">
+          How do I generate a WhatsApp pairing code?
+          <span class="faq-arrow">⌄</span>
+        </button>
+        <div class="faq-answer">
+          Select a server, enter your WhatsApp number with the country code,
+          and press Generate Pair Code. Your code will appear when the server
+          successfully responds.
+        </div>
+      </div>
+
+      <div class="faq-item">
+        <button class="faq-question">
+          Is REDTECH-AI free?
+          <span class="faq-arrow">⌄</span>
+        </button>
+        <div class="faq-answer">
+          Availability and hosting conditions depend on the REDTECH-AI
+          service configuration.
+        </div>
+      </div>
+
+      <div class="faq-item">
+        <button class="faq-question">
+          What do I do with the pairing code?
+          <span class="faq-arrow">⌄</span>
+        </button>
+        <div class="faq-answer">
+          Open WhatsApp, go to Linked devices, choose Link a device,
+          then choose Link with phone number instead. Enter the generated
+          code to connect your account.
+        </div>
+      </div>
+
+      <div class="faq-item">
+        <button class="faq-question">
+          What if my pairing code does not work?
+          <span class="faq-arrow">⌄</span>
+        </button>
+        <div class="faq-answer">
+          Check your internet connection, confirm your phone number includes
+          the correct country code, and request a fresh code. Never share
+          your pairing code with anyone.
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="disclaimer">
+    <div class="content-card">
+      <h2>Disclaimer</h2>
+      <p>
+        REDTECH-AI is an independent project and is not affiliated with
+        WhatsApp Inc. Use this service responsibly and only with accounts
+        you own or are authorized to connect. You are responsible for
+        complying with WhatsApp's terms and applicable laws.
+      </p>
+    </div>
+  </section>
+
+  <section class="business-section" id="services">
+    <h2 class="section-heading">Automate Chats, Save Time, Grow Sales</h2>
+    <p class="business-intro">
+      Discover how REDTECH-AI can help improve your communication.
+    </p>
+
+    <div class="business-grid">
+      <article class="business-card">
+        <div class="business-icon">⚡</div>
+        <h3>Instant Support</h3>
+        <p>
+          WhatsApp automation can help businesses respond to customer
+          questions faster and provide support around the clock.
+        </p>
+      </article>
+
+      <article class="business-card">
+        <div class="business-icon">🎯</div>
+        <h3>Lead Capture</h3>
+        <p>
+          Organize customer conversations and make it easier to follow
+          up with people who contact your business.
+        </p>
+      </article>
+
+      <article class="business-card">
+        <div class="business-icon">📦</div>
+        <h3>Order Automation</h3>
+        <p>
+          Simplify order messages and booking confirmations using
+          automated WhatsApp workflows.
+        </p>
+      </article>
+    </div>
+  </section>
+
+  <section class="community" id="community">
+    <div>
+      <h3>Join REDTECH-AI Community</h3>
+      <p>Get updates, news and announcements.</p>
+    </div>
+
+    <a
+      href="https://whatsapp.com/channel/0029Vb9AwScF6sn47ClubG1Z"
+      target="_blank"
+      rel="noopener noreferrer"
+    >
+      Join Channel ↗
+    </a>
+  </section>
+
+</main>
+
+<footer>
+  <strong>REDTECH-AI</strong><br>
+  WhatsApp Pairing Portal<br>
+  © <span id="year"></span> REDTECH-AI. All rights reserved.
+</footer>
 
 <script>
-const grid=document.getElementById('serverGrid');
-for(let i=1;i<=200;i++){
-  const b=document.createElement('button');
-  b.textContent='Server '+i;
-  b.onclick=()=>{document.querySelectorAll('#serverGrid button').forEach(x=>x.classList.remove('active'));b.classList.add('active');grid.classList.remove('show');}
-  grid.appendChild(b);
-}
-document.getElementById('openServers').onclick=()=>grid.classList.toggle('show');
-document.getElementById('gen').onclick=()=>{
-  const p=document.getElementById('phone').value.replace(/\D/g,'');
-  if(p.length<10){alert('Enter valid number with country code');return}
-  document.getElementById('result').classList.add('show');
-  let s=30;
-  const t=setInterval(()=>{s--;document.getElementById('timer').innerText='Wait '+s+'s';if(s<=0)clearInterval(t)},1000);
-}
+  const $ = (id) => document.getElementById(id);
+
+  const pairForm = $("pairForm");
+  const phoneInput = $("phoneInput");
+  const serverSelect = $("serverSelect");
+  const generateButton = $("generateButton");
+  const messageBox = $("messageBox");
+  const resultBox = $("resultBox");
+  const pairCode = $("pairCode");
+  const copyButton = $("copyButton");
+
+  let currentCode = "";
+
+  $("year").textContent = new Date().getFullYear();
+
+  // Navigation menu
+  $("menuButton").addEventListener("click", () => {
+    $("menuPanel").classList.toggle("open");
+  });
+
+  document.querySelectorAll("#menuPanel a").forEach(link => {
+    link.addEventListener("click", () => {
+      $("menuPanel").classList.remove("open");
+    });
+  });
+
+  document.addEventListener("click", (event) => {
+    if (
+      !event.target.closest("#menuPanel") &&
+      !event.target.closest("#menuButton")
+    ) {
+      $("menuPanel").classList.remove("open");
+    }
+  });
+
+  // Light and dark theme
+  $("themeButton").addEventListener("click", () => {
+    document.body.classList.toggle("light-mode");
+  });
+
+  // Instructions accordion
+  $("instructionsToggle").addEventListener("click", () => {
+    const instructions = $("instructions");
+    const isOpen = instructions.classList.toggle("show");
+
+    $("instructionsToggle").textContent =
+      isOpen ? "Hide Instructions ▲" : "Show Instructions ▼";
+  });
+
+  // FAQ accordion
+  document.querySelectorAll(".faq-question").forEach(button => {
+    button.addEventListener("click", () => {
+      button.parentElement.classList.toggle("active");
+    });
+  });
+
+  function showMessage(text, type) {
+    messageBox.textContent = text;
+    messageBox.className = "message show " + type;
+  }
+
+  function hideMessage() {
+    messageBox.textContent = "";
+    messageBox.className = "message";
+  }
+
+  function getPairCode(data) {
+    if (!data || typeof data !== "object") return "";
+
+    const possible = [
+      data.code,
+      data.pairCode,
+      data.pair_code,
+      data.pairingCode,
+      data.pairing_code,
+      data.data && data.data.code,
+      data.data && data.data.pairCode,
+      data.data && data.data.pairingCode
+    ];
+
+    for (const value of possible) {
+      if (typeof value === "string" && value.trim()) {
+        return value.trim();
+      }
+    }
+
+    return "";
+  }
+
+  // Pair code generation
+  pairForm.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    hideMessage();
+
+    const phone = phoneInput.value.replace(/\D/g, "");
+    const server = serverSelect.value;
+
+    if (!server) {
+      showMessage("Please select a server first.", "error");
+      serverSelect.focus();
+      return;
+    }
+
+    if (phone.length < 7 || phone.length > 15) {
+      showMessage(
+        "Enter a valid WhatsApp number with country code (7–15 digits).",
+        "error"
+      );
+      phoneInput.focus();
+      return;
+    }
+
+    currentCode = "";
+    resultBox.classList.remove("show");
+    generateButton.disabled = true;
+    generateButton.textContent = "Generating Pair Code...";
+
+    try {
+      const response = await fetch("/api/bot/quick-pair-code", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Accept": "application/json"
+        },
+        body: JSON.stringify({
+          phone: phone,
+          server: server
+        })
+      });
+
+      const raw = await response.text();
+
+      let data;
+      try {
+        data = JSON.parse(raw);
+      } catch {
+        throw new Error(
+          "The server returned an invalid response. Please try again."
+        );
+      }
+
+      if (!response.ok || data.success === false || data.error) {
+        throw new Error(
+          data.message ||
+          data.error ||
+          "Pairing failed. Please try again."
+        );
+      }
+
+      const code = getPairCode(data);
+
+      if (!code) {
+        throw new Error(
+          data.message ||
+          "The server did not return a pairing code."
+        );
+      }
+
+      currentCode = code;
+      pairCode.textContent = code;
+      resultBox.classList.add("show");
+
+      showMessage(
+        "Pairing code generated. Open WhatsApp and enter the code in Linked devices.",
+        "success"
+      );
+
+      resultBox.scrollIntoView({
+        behavior: "smooth",
+        block: "nearest"
+      });
+
+    } catch (error) {
+      showMessage(
+        error.message || "Unable to connect to the pairing server.",
+        "error"
+      );
+    } finally {
+      generateButton.disabled = false;
+      generateButton.textContent = "Generate Pair Code";
+    }
+  });
+
+  // Copy pairing code
+  copyButton.addEventListener("click", async () => {
+    if (!currentCode) return;
+
+    try {
+      await navigator.clipboard.writeText(currentCode);
+      copyButton.textContent = "Copied ✓";
+      setTimeout(() => {
+        copyButton.textContent = "Copy Code";
+      }, 1800);
+    } catch {
+      showMessage(
+        "Copy was blocked by your browser. Please select and copy the code manually.",
+        "error"
+      );
+    }
+  });
+
+  // Only allow digits in the phone field
+  phoneInput.addEventListener("input", () => {
+    phoneInput.value = phoneInput.value.replace(/\D/g, "").slice(0, 15);
+  });
 </script>
+
 </body>
 </html>
+
