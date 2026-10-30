@@ -1,588 +1,181 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title> 𝐑𝐄𝐃𝐓𝐄𝐂𝐇-𝐀𝐈 // Pair Code</title>
-
-<style>
-:root{
---red:#ff2e63;
---red2:#ff0844;
---purple:#8b5cf6;
---purple2:#6c63ff;
---bg:#10051b;
---card:#1b1025e8;
---line:rgba(168,85,247,.3);
---text:#ffe9ef;
---muted:#c0a6d0
-}
-*{box-sizing:border-box;margin:0;padding:0}
-
-body{
-min-height:100vh;
-background:var(--bg);
-background-image:
-radial-gradient(at 15% 15%,rgba(255,46,99,.35) 0%,transparent 45%),
-radial-gradient(at 90% 20%,rgba(139,92,246,.4) 0%,transparent 48%),
-radial-gradient(at 80% 90%,rgba(108,99,255,.3) 0%,transparent 48%),
-radial-gradient(at 10% 85%,rgba(255,8,68,.18) 0%,transparent 45%);
-color:var(--text);
-font-family:system-ui;
-display:flex;
-justify-content:center;
-padding:20px
-}
-
-body::before{
-content:"";
-position:fixed;
-inset:0;
-background-image:
-linear-gradient(rgba(168,85,247,.045) 1px,transparent 1px),
-linear-gradient(90deg,rgba(255,46,99,.04) 1px,transparent 1px);
-background-size:36px 36px;
-pointer-events:none
-}
-
-.wrap{width:100%;max-width:440px;position:relative;z-index:1}
-
-.top{
-display:flex;
-justify-content:space-between;
-align-items:center;
-gap:10px;
-flex-wrap:wrap;
-background:rgba(255,255,255,.06);
-backdrop-filter:blur(20px);
-border:1px solid rgba(192,132,252,.2);
-border-radius:18px;
-padding:12px 14px;
-margin-bottom:18px
-}
-
-.brand{
-display:flex;
-gap:10px;
-align-items:center;
-color:var(--red);
-font-weight:900;
-letter-spacing:.12em;
-font-size:.8rem
-}
-
-.brand-mark{width:22px;height:28px;filter:drop-shadow(0 0 8px var(--red))}
-.brand-mark path:first-child{fill:var(--red)}
-.brand-mark path:last-child{fill:var(--purple)}
-
-.brand small{display:block;font-size:8px;margin-top:3px}
-
-.nav{
-display:flex;
-gap:6px;
-background:rgba(139,92,246,.14);
-border:1px solid rgba(168,85,247,.3);
-border-radius:999px;
-padding:5px;
-backdrop-filter:blur(10px)
-}
-
-.nav a{
-color:#d9c4e9;
-text-decoration:none;
-font-size:10px;
-font-weight:900;
-letter-spacing:.08em;
-padding:9px 14px;
-border-radius:999px;
-transition:.2s;
-border:1px solid transparent
-}
-
-.nav a:hover{color:white;background:rgba(255,46,99,.25)}
-
-.nav a.active{
-background:linear-gradient(90deg,var(--red),var(--purple));
-color:white;
-box-shadow:0 4px 18px rgba(168,85,247,.4);
-border-color:rgba(255,255,255,.15)
-}
-
-.tag{text-align:center;color:#d8a5ff;font-size:10px;letter-spacing:.22em;font-weight:800}
-
-h1{text-align:center;font-size:1.9rem;font-weight:900;line-height:1.1;margin-top:10px}
-h1 span{
-background:linear-gradient(90deg,var(--red),#c084fc,var(--purple2));
--webkit-background-clip:text;
--webkit-text-fill-color:transparent
-}
-
-.intro{text-align:center;color:var(--muted);font-size:.85rem;line-height:1.6;margin-top:10px}
-
-.card{
-margin-top:18px;
-background:var(--card);
-backdrop-filter:blur(20px);
-border:1px solid var(--line);
-border-radius:28px;
-padding:24px;
-box-shadow:0 20px 60px rgba(0,0,0,.5),0 0 0 1px rgba(168,85,247,.1) inset
-}
-
-.logo-wrap{display:flex;justify-content:center;margin:8px 0 18px}
-
-.logo{
-width:90px;height:90px;
-border-radius:60%;
-background:linear-gradient(135deg,var(--red),var(--purple));
-display:flex;
-align-items:center;
-justify-content:center;
-font-size:40px;
-box-shadow:0 0 0 10px rgba(255,46,99,.15),0 0 0 30px rgba(139,92,246,.1),0 0 40px rgba(168,85,247,.5);
-animation:pulseRed 2.2s infinite
-}
-
-@keyframes pulsePink{
-0%{box-shadow:0 0 0 10px rgba(255,46,99,.18),0 0 0 20px rgba(139,92,246,.08),0 0 40px rgba(255,46,99,.5)}
-50%{box-shadow:0 0 0 14px rgba(255,46,99,.12),0 0 0 28px rgba(139,92,246,.05),0 0 55px rgba(168,85,247,.7)}
-100%{box-shadow:0 0 0 10px rgba(255,46,99,.18),0 0 0 20px rgba(139,92,246,.08),0 0 40px rgba(255,46,99,.5)}
-}
-
-.label{
-display:block;
-margin-bottom:8px;
-color:#d8a5ff;
-font-size:10px;
-letter-spacing:.12em;
-font-weight:800
-}
-
-.input{
-display:flex;
-background:#160e20;
-border:1px solid var(--line);
-border-radius:14px;
-overflow:hidden
-}
-
-.input input{
-width:100%;
-border:0;
-outline:0;
-padding:14px 16px;
-background:transparent;
-color:#fff;
-font:inherit;
-text-align:center;
-letter-spacing:.1em;
-font-weight:700
-}
-
-.input input:focus{box-shadow:inset 0 0 0 1px var(--purple)}
-
-button{
-width:100%;
-margin-top:14px;
-border:0;
-border-radius:14px;
-padding:15px;
-color:#fff;
-background:linear-gradient(135deg,var(--red),var(--purple));
-font:800 12px system-ui;
-letter-spacing:.08em;
-cursor:pointer;
-box-shadow:0 0 24px rgba(139,92,246,.25);
-transition:.2s
-}
-
-button:hover{transform:translateY(-1px);box-shadow:0 0 32px rgba(168,85,247,.5)}
-button:disabled{opacity:.5;cursor:wait;transform:none}
-
-.recovery{
-display:block;
-text-align:center;
-margin-top:12px;
-color:#d8a5ff;
-font-size:10px;
-font-weight:800;
-letter-spacing:.05em;
-text-decoration:none
-}
-
-.recovery:hover{color:#fff}
-
-.result{
-margin-top:14px;
-padding:16px;
-border-radius:16px;
-border:1px dashed var(--pink);
-background:rgba(139,92,246,.09);
-animation:reveal .4s ease both
-}
-
-.result small{
-color:#d8a5ff;
-font-size:9px;
-letter-spacing:.15em;
-font-weight:800;
-display:block;
-text-align:center
-}
-
-.code{
-display:block;
-margin-top:10px;
-color:#fff;
-font-size:32px;
-letter-spacing:.18em;
-font-weight:900;
-text-align:center;
-word-break:break-all;
-text-shadow:0 0 20px var(--pink)
-}
-
-.copy{margin-top:12px;background:transparent;border:1px solid var(--purple);color:#d8a5ff}
-.copy:hover{background:var(--pink);color:#fff}
-
-.plans{margin-top:18px;padding-top:16px;border-top:1px solid var(--line)}
-
-.plans-head{
-display:flex;
-justify-content:space-between;
-font-size:9px;
-letter-spacing:.12em;
-font-weight:800;
-color:#d8a5ff
-}
-
-.payment-state{color:var(--muted);font-size:9px}
-
-.plan-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:10px}
-
-.plan{
-padding:12px;
-border-radius:12px;
-border:1px solid var(--line);
-background:#160e20;
-text-align:center
-}
-
-.plan strong{display:block;color:#fff;font-size:14px}
-.plan span{color:var(--muted);font-size:9px;margin-top:4px;display:block}
-
-.plan button{
-margin-top:8px;
-padding:8px;
-font-size:9px;
-background:transparent;
-border:1px solid var(--line);
-color:var(--muted);
-box-shadow:none;
-cursor:not-allowed
-}
-
-.hint{margin-top:12px;color:var(--muted);font-size:11px;line-height:1.5;text-align:center}
-
-.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:18px 0}
-
-.stat{
-background:var(--card);
-border:1px solid var(--line);
-border-radius:14px;
-padding:12px;
-text-align:center
-}
-
-.stat b{display:block;color:#d8a5ff;font-size:9px}
-.stat strong{display:block;font-size:16px;margin-top:4px}
-
-.footer{
-margin:22px 0 10px;
-padding:16px;
-border:1px solid var(--line);
-display:flex;
-gap:12px;
-align-items:center;
-background:var(--card);
-border-radius:14px
-}
-
-.footer a{color:#25D366;text-decoration:none;font-weight:700}
-
-.toast{
-position:fixed;
-right:16px;
-bottom:16px;
-display:none;
-max-width:calc(100% - 32px);
-padding:12px 16px;
-border-radius:12px;
-border:1px solid var(--purple);
-background:#1f122b;
-color:#fff;
-font-size:12px;
-z-index:9
-}
-
-.toast.show{display:block}
-
-@keyframes reveal{
-from{opacity:0;transform:translateY(10px)}
-to{opacity:1;transform:none}
-}
-
-/* NEW WHATSAPP QR SCANNER SECTION */
-
-.qr-card{
-margin-top:18px;
-padding:22px;
-border-radius:24px;
-background:linear-gradient(145deg,rgba(139,92,246,.15),rgba(255,46,99,.08),rgba(20,8,34,.92));
-border:1px solid rgba(192,132,252,.35);
-box-shadow:0 15px 45px rgba(0,0,0,.3),0 0 24px rgba(139,92,246,.1);
-text-align:center
-}
-
-.qr-title{
-font-size:17px;
-font-weight:900;
-background:linear-gradient(90deg,#ff2e63,#d8a5ff,#8b5cf6);
--webkit-background-clip:text;
--webkit-text-fill-color:transparent
-}
-
-.qr-description{
-font-size:10px;
-line-height:1.6;
-color:var(--muted);
-margin-top:7px
-}
-
-.qr-frame{
-width:100%;
-max-width:260px;
-min-height:260px;
-margin:18px auto 12px;
-padding:14px;
-display:flex;
-align-items:center;
-justify-content:center;
-background:#fff;
-border:3px solid #c084fc;
-border-radius:18px;
-box-shadow:0 0 25px rgba(139,92,246,.3);
-overflow:hidden
-}
-
-#qr-image{
-display:block;
-width:100%;
-max-width:230px;
-height:auto;
-image-rendering:auto
-}
-
-.qr-placeholder{
-color:#675477;
-font-size:12px;
-line-height:1.7;
-padding:18px
-}
-
-.qr-status{
-font-size:10px;
-font-weight:800;
-letter-spacing:.08em;
-color:#d8a5ff;
-margin-top:10px;
-overflow-wrap:anywhere
-}
-
-.qr-button{
-background:linear-gradient(135deg,#8b5cf6,#ff2e63);
-box-shadow:0 0 22px rgba(139,92,246,.25)
-}
-
-.qr-instructions{
-margin-top:15px;
-padding:13px;
-border-radius:12px;
-background:rgba(139,92,246,.09);
-border:1px solid rgba(168,85,247,.18);
-text-align:left;
-font-size:11px;
-color:#e5d5f5;
-line-height:1.9
-}
-
-.qr-instructions strong{color:#d8a5ff}
-
-.qr-note{
-margin-top:12px;
-font-size:10px;
-color:var(--muted);
-line-height:1.6
-}
-
-@media(max-width:380px){
-body{padding:12px}
-.top{justify-content:center}
-.card{padding:18px}
-.plan-grid{gap:5px}
-.plan{padding:9px 5px}
-.plan strong{font-size:12px}
-.qr-card{padding:16px}
-h1{font-size:1.65rem}
-}
-</style>
-</head>
-
-<body>
-<div class="wrap">
-
-<header class="top">
-<div class="brand">
-<svg class="brand-mark" viewBox="0 0 24 30">
-<path d="M12 1C13 7 20 9 20 17a8 8 0 0 1-16 0c0-4 2-7 5-10 0 4 2 5 3 6 2-3 1-7 0-12Z"/>
-<path d="M12 13c3 3 4 5 4 7a4 4 0 0 1-8 0c0-2 1-4 4-7Z"/>
-</svg>
-<span>// REDTECH<small>PAIRING TERMINAL</small></span>
-</div>
-
-<nav class="nav">
-<a href="/code" class="active">PAIR CODE</a>
-</nav>
-</header>
-
-<main>
-<div class="tag">[ NODE 02 / LINK ]</div>
-<h1>Generate a <span>pairing code.</span></h1>
-<p class="intro">Enter your WhatsApp number and generate one secure pairing code.</p>
-
-<section class="card">
-
-<div class="logo-wrap">
-<div class="logo">🔑</div>
-</div>
-
-<label class="label" for="phone">WHATSAPP NUMBER // COUNTRY CODE INCLUDED</label>
-
-<div class="input">
-<input id="phone" type="tel" inputmode="numeric" placeholder="254712345678" autocomplete="tel" maxlength="15">
-</div>
-<p class="hint">Enter digits only, including your country code. Example: 254712345678.</p>
-
-<button id="generate">GENERATE PAIR CODE //→</button>
-
-
-
-<div id="result" class="result" hidden>
-<small>WHATSAPP PAIRING CODE</small>
-<strong id="code" class="code"></strong>
-<button id="copy" class="copy">📋 COPY CODE</button>
-<p class="hint">In WhatsApp: Settings → Linked Devices → Link a Device → Link with phone number instead.</p>
-</div>
-</section>
-
-<div class="stats">
-<div class="stat"><b>ACTIVE PAIRS</b><strong>8.2K</strong></div>
-<div class="stat"><b>SUCCESS</b><strong>98.7%</strong></div>
-<div class="stat"><b>AVG TIME</b><strong>2.1s</strong></div>
-</div>
-
-<div class="footer">
-<svg viewBox="0 0 24 24" width="32" height="32" fill="#25D366">
-<path d="M12 0C5.37 0 0 5.37 0 12c0 2.11.55 4.11 1.6 5.85L0 24l6.3-1.65A11.9 11.9 0 0012 24c6.63 0 12-5.37 12-12S18.63 0 12 0z"/>
-</svg>
-<div>
-<div style="font-size:15px">Join our Community</div>
-<a href="https://whatsapp.com/channel/0029Vb9AwScF6sn47ClubG1Z" target="_button" rel="noopener">WhatsApp Channel →</a>
-</div>
-</div>
-
-<div style="text-align:center;color:var(--muted);font-size:10px;padding:10px 0 20px">
-© 2026 Redtech Bot. All rights reserved.
-</div>
-</main>
-</div>
-
-<div id="toast" class="toast" role="status" aria-live="polite"></div>
-
-<script>
-const $ = s => document.querySelector(s);
-
-function toast(message){
-  $("#toast").textContent = message;
-  $("#toast").classList.add("show");
-  setTimeout(() => $("#toast").classList.remove("show"), 3500);
-}
-
-async function api(url, options = {}){
-  const response = await fetch(url, {
-    ...options,
-    headers: {
-      "Content-Type": "application/json",
-      ...(options.headers || {})
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>𝐑𝐄𝐃𝐓𝐄𝐂𝐇 Bot - Pair Code Only</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"/>
+  <style>
+    :root {
+      --primary-color: #000000;
+      --secondary-color: #ffffff;
+      --accent-color: #f0f0f0;
+      --text-color: #000000;
+      --background-color: #ffffff;
+      --hover-color: #f5f5f5;
+      --border-color: rgba(0, 0, 0, 0.1);
     }
-  });
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--background-color);
+      color: var(--text-color);
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 15px;
+    }
+    .container {
+      width: 100%;
+      max-width: 450px;
+      background: var(--background-color);
+      border-radius: 16px;
+      padding: 25px;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+      border: 1px solid var(--border-color);
+    }
+    .header { text-align: center; margin-bottom: 25px; }
+    .logo {
+      width: 70px; height: 70px; margin: 0 auto 16px;
+      background: var(--primary-color); border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 28px; color: white;
+    }
+    .title { font-size: 24px; font-weight: 700; margin-bottom: 8px; }
+    .subtitle { font-size: 14px; color: rgba(0, 0, 0, 0.7); margin-bottom: 20px; }
+    .social-icons { display: flex; justify-content: center; gap: 12px; margin-bottom: 20px; }
+    .social-icons a {
+      width: 44px; height: 44px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      color: #fff; font-size: 18px; text-decoration: none;
+    }
+    .social-icons a.youtube { background: #FF0000; }
+    .social-icons a.telegram { background: #0088cc; }
+    .social-icons a.whatsapp { background: #0cfa10; }
+    .social-icons a.github { background: #333; }
+    .input-group { margin-bottom: 20px; }
+    .input-label { display: block; margin-bottom: 8px; font-weight: 500; font-size: 13px; }
+    .input-field {
+      width: 100%; padding: 12px; border: 1.5px solid var(--border-color);
+      border-radius: 12px; background: var(--background-color);
+      font-size: 15px;
+    }
+    .input-field:focus { outline: none; border-color: var(--primary-color); }
+    .generate-btn {
+      width: 100%; padding: 12px; background: var(--primary-color);
+      border: none; border-radius: 12px; color: var(--secondary-color);
+      font-size: 15px; font-weight: 600; cursor: pointer; margin-bottom: 16px;
+    }
+    .generate-btn:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
+    .code-display {
+      background: var(--hover-color); padding: 16px; border-radius: 12px;
+      text-align: center; font-size: 18px; font-weight: 700;
+      margin-bottom: 16px; min-height: 60px;
+      display: flex; align-items: center; justify-content: center;
+      border: 1.5px solid var(--border-color); letter-spacing: 2px;
+    }
+    .copy-btn {
+      width: 100%; padding: 12px; background: var(--hover-color);
+      border: 1.5px solid var(--border-color); border-radius: 12px;
+      font-size: 15px; font-weight: 600; cursor: pointer;
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+    }
+    .success-message { color: #000; font-size: 20px; }
+    .error-message { color: #e74c3c; font-size: 14px; }
+    .loading { display: none; text-align: center; margin: 16px 0; }
+    .loading i { font-size: 24px; animation: spin 1s linear infinite; }
+    @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    .footer { text-align: center; margin-top: 20px; font-size: 12px; color: rgba(0,0,0,0.5); }
+    .info-box { background: #f9f9f9; padding: 12px; border-radius: 10px; font-size: 12px; margin-bottom: 16px; line-height: 1.6; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <div class="logo"><i class="fas fa-robot"></i></div>
+      <h1 class="title">BMW Bot</h1>
+      <p class="subtitle">Link with 8-digit Pair Code Only</p>
+      <div class="social-icons">
+        <a href="" target="_blank" class="youtube"><i class="fab fa-youtube"></i></a>
+        <a href="https://t.me/+hxojkc7kaVViYzdl" target="_blank" class="telegram"><i class="fab fa-telegram-plane"></i></a>
+        <a href="https://whatsapp.com/channel/0029Vb9AwScF6sn47ClubG1Z" target="_blank" class="whatsapp"><i class="fab fa-whatsapp"></i></a>
+        <a href="" target="_blank" class="github"><i class="fab fa-github"></i></a>
+      </div>
+    </div>
 
-  const data = await response.json().catch(() => ({}));
+    <div class="info-box">
+      <i class="fas fa-info-circle"></i> Enter number with country code without +<br>
+      Example: 254726476468
+    </div>
 
-  if (!response.ok) {
-    throw new Error(data.error || "Request failed");
-  }
+    <div class="input-group">
+      <label class="input-label">WhatsApp Number</label>
+      <input type="text" id="mobileNumber" class="input-field" placeholder="254XXXXXXXX">
+    </div>
 
-  return data;
-}
+    <button class="generate-btn" id="submit">
+      <i class="fas fa-key"></i> Get 8-Digit Code
+    </button>
 
-/* ORIGINAL PAIRING CODE FUNCTION */
+    <div class="loading" id="loading"><i class="fas fa-spinner"></i> Generating code...</div>
 
-$("#generate").onclick = async () => {
-  const phone = $("#phone").value.replace(/\D/g, "");
+    <div class="code-display" id="codeDisplay">Your code will appear here</div>
 
-  if (phone.length < 7 || phone.length > 15) return toast("Enter a valid WhatsApp number with country code.");
+    <button class="copy-btn" id="copy" onclick="copyCode()">
+      <i class="fas fa-copy"></i> Copy Code
+    </button>
 
-  const button = $("#generate");
-  button.disabled = true;
-  button.textContent = "REQUESTING //…";
+    <div class="footer"><p>© 2026 KING RED | BMW Bot - Secure Pair Mode</p></div>
+  </div>
 
-  try {
-    const data = await api("/api/bot/quick-pair-code", {
-      method: "POST",
-      body: JSON.stringify({ phone })
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/1.0.0-alpha.1/axios.min.js"></script>
+  <script>
+    document.getElementById("submit").addEventListener("click", async (e) => {
+      e.preventDefault();
+      const mobileNumberInput = document.getElementById("mobileNumber");
+      const codeDisplay = document.getElementById("codeDisplay");
+      const loadingSpinner = document.getElementById("loading");
+      const mobileNumber = mobileNumberInput.value.trim().replace(/[^0-9]/g, "");
+
+      if (!mobileNumber || mobileNumber.length < 10) {
+        codeDisplay.innerHTML = '<div class="error-message">Enter valid number e.g. 254712345678</div>';
+        return;
+      }
+
+      loadingSpinner.style.display = "block";
+      codeDisplay.innerHTML = 'Generating...';
+
+      try {
+        const response = await axios(`/pair?number=${mobileNumber}`);
+        const code = response.data.code;
+
+        if (!code || response.data.error) {
+          codeDisplay.innerHTML = `<div class="error-message">${response.data.error || 'Failed to get code'}</div>`;
+        } else {
+          codeDisplay.innerHTML = `<div class="success-message">${code}</div>`;
+        }
+      } catch (error) {
+        console.error(error);
+        const msg = error.response?.data?.code || error.response?.data?.error || 'Error generating code';
+        codeDisplay.innerHTML = `<div class="error-message">${msg}</div>`;
+      } finally {
+        loadingSpinner.style.display = "none";
+      }
     });
 
-    if (!data.code) {
-      throw new Error("No pairing code was returned by the server.");
+    function copyCode() {
+      let text = document.getElementById("codeDisplay").innerText.trim();
+      if (text === 'Your code will appear here' || text.includes('Enter valid') || text.includes('Failed')) return;
+      // Remove extra words if any
+      text = text.replace('CODE:', '').trim();
+      navigator.clipboard.writeText(text).then(() => {
+        const btn = document.getElementById("copy");
+        const orig = btn.innerHTML;
+        btn.innerHTML = '<i class="fas fa-check"></i> Copied!';
+        setTimeout(() => btn.innerHTML = orig, 2000);
+      });
     }
-
-    $("#code").textContent = data.code === "CONNECTED" ? "CONNECTED" : data.code;
-    $("#result").hidden = false;
-    toast(data.restored ? "WhatsApp is already connected." : "Pairing code generated.");
-  } catch (error) {
-    toast(error.message);
-  } finally {
-    button.disabled = false;
-    button.textContent = "GENERATE PAIR CODE //→";
-  }
-};
-
-$("#copy").onclick = async () => {
-  try {
-    await navigator.clipboard.writeText($("#code").textContent);
-    const button = $("#copy");
-    const oldText = button.textContent;
-    button.textContent = "✅ COPIED!";
-    toast("Copied.");
-    setTimeout(() => button.textContent = oldText, 2000);
-  } catch {
-    toast("Copy failed. Please copy the code manually.");
-  }
-};
-
-</script>
-
-
+  </script>
 </body>
-  </html>
+</html>
