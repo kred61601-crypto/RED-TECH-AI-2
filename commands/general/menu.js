@@ -18,12 +18,12 @@ module.exports = {
             ctx.msg?.key?.participant?.split("@")[0] ||
             "User";
 
-        // 👑 React to the original command before showing the menu
+        // 🐉 React to the original command before showing the menu
         try {
             if (ctx.msg?.key?.id) {
                 await sock.sendMessage(jid, {
                     react: {
-                        text: "👑",
+                        text: "🐉",
                         key: ctx.msg.key
                     }
                 });
@@ -62,7 +62,7 @@ module.exports = {
                     )
             );
 
-            // 👑 Filter categories
+            // 🐉 Filter categories
             const categories = {
                 admin: uniqueCommands.filter(
                     c => (c.category === "admin" || c.adminOnly) &&
@@ -387,7 +387,7 @@ module.exports = {
             const mode = (settings2.mode || "public").toUpperCase();
             const prefix = settings2.prefix || ".";
 
-            // 👑 Build main menu
+            // 🐉 Build main menu
             let menuBody = `╔══════════════════════╗\n`;
             menuBody += `║  👑  *𝐑𝐄𝐃 𝐓𝐄𝐂𝐇 𝐀𝐈*  🧠  ║\n`;
             menuBody += `╚══════════════════════╝\n\n`;
