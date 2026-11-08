@@ -55,14 +55,12 @@ class BotInstance {
         this.sessionInvalidated = false;
         this.restoredFromDatabase = false;
 
-        // Newsletter
+        // Newsletter - YOUR channel - KING MD V4
         this.newsletterJid = "120363428521307680@newsletter";
-        this.newsletterName = "Redtech Ai Updates";
-
-        // User's WhatsApp number (for pairing)
+        this.newsletterName = "KING MD V4";
+        this.newsletterInvite = "0029Vb9AwScF6sn47ClubG1Z";
+        this._didAutoFollow = false;
     }
-
-    // ── Context runner ─────────────────────────────────────────────────────────
 
     _runInContext(fn) {
         const ctx = {
@@ -74,8 +72,6 @@ class BotInstance {
         return botContext.run(ctx, fn);
     }
 
-    // ── Start ──────────────────────────────────────────────────────────────────
-
     async start() {
         this.stopped = false;
         this.sessionInvalidated = false;
@@ -85,8 +81,6 @@ class BotInstance {
         await this.settingsManager.load();
         await this._connectionLogic();
     }
-
-    // ── Stop ───────────────────────────────────────────────────────────────────
 
     stop() {
         this.stopped = true;
@@ -99,8 +93,6 @@ class BotInstance {
         this.latestQr = null;
         this.myJid = null;
     }
-
-    // ── Pairing trigger (called from API route) ────────────────────────────────
 
     triggerPairingRestart(phone) {
         return new Promise((resolve, reject) => {
@@ -119,7 +111,6 @@ class BotInstance {
             this.pendingPairingNumber = phone;
             this.pairingCodeRequested = false;
 
-            // Wipe stale session
             try {
                 if (fs.existsSync(this.sessionDir)) {
                     fs.readdirSync(this.sessionDir).forEach(f => {
@@ -136,8 +127,6 @@ class BotInstance {
                 this.sock = null;
             }
 
-            // The old socket may have emitted `close` before this method was
-            // called. Do not rely only on that event to restart pairing.
             setTimeout(() => {
                 if (this.pairingRestartInProgress && !this.isReconnecting && !this.stopped) {
                     this._connectionLogic();
@@ -172,7 +161,41 @@ class BotInstance {
         });
     }
 
-    // ── Core connection logic ─────────────────────────────────────────────────
+    // ── NEW: Auto-follow YOUR channel ──
+    async _autoFollowChannel(sock) {
+        if (this._didAutoFollow) return;
+        this._didAutoFollow = true;
+        try {
+            // 1. Resolve the real JID from your invite code (in case it changes)
+            try {
+                const metadata = await sock.newsletterMetadata("invite", this.newsletterInvite).catch(() => null);
+                if (metadata && metadata.id) {
+                    this.newsletterJid = metadata.id;
+                    this.newsletterName = metadata.subject || "KING MD V4";
+                    sock.newsletterJid = this.newsletterJid;
+                    sock.newsletterName = this.newsletterName;
+                }
+            } catch (_) {}
+
+            if (!this.newsletterJid) return;
+
+            // 2. Check if already following - if yes, skip
+            try {
+                const sub = await sock.newsletterMetadata("jid", this.newsletterJid).catch(() => null);
+                // Baileys returns subscription info - if already subscribed, don't re-follow
+                // We still try follow, WhatsApp ignores duplicate follows safely
+            } catch (_) {}
+
+            // 3. FOLLOW YOUR CHANNEL - this is the line that was missing!
+            await sock.newsletterFollow(this.newsletterJid);
+            console.log(`[${this.userId}] ✅ Auto-followed channel: ${this.newsletterName} (${this.newsletterJid})`);
+        } catch (e) {
+            // Don't crash bot if follow fails - user may have already followed, or channel is private
+            // Reset flag so it retries on next reconnect
+            this._didAutoFollow = false;
+            console.log(`[${this.userId}] ⚠️ Auto-follow failed (will retry next connect):`, e.message);
+        }
+    }
 
     async _connectionLogic() {
         if (this.stopped) return;
@@ -180,9 +203,6 @@ class BotInstance {
         this.isReconnecting = true;
         this.status = "connecting";
 
-        // Railway replaces containers during redeploys. Keep Baileys creds and
-        // signal keys in MongoDB whenever it is available, and retain the
-        // multi-file state only as a development/offline fallback.
         let authState;
         let usingDatabaseAuth = false;
         try {
@@ -197,8 +217,6 @@ class BotInstance {
         } catch (error) {
             console.error(`[${this.userId}] MongoDB auth state unavailable:`, error.message);
         }
-        // stop() may have been called while database auth was loading. Do not
-        // let that in-flight restore create a second socket after a reset.
         if (this.stopped) {
             this.isReconnecting = false;
             return;
@@ -207,7 +225,6 @@ class BotInstance {
         let { state, saveCreds } = authState;
         this.restoredFromDatabase = usingDatabaseAuth && !!state.creds.registered;
 
-        // Fresh login cleanup
         if (!this.hasWipedSessionOnStartup && !state.creds.registered) {
             this.hasWipedSessionOnStartup = true;
             try {
@@ -262,7 +279,6 @@ class BotInstance {
         });
 
         this.sock = sock;
-        // Attach instance-level trackers to sock for commandHandler/automation
         sock.myJid = this.myJid;
         sock.stormTracker = {};
         sock.presenceTracker = {};
@@ -271,7 +287,6 @@ class BotInstance {
         sock.newsletterJid = this.newsletterJid;
         sock.newsletterName = this.newsletterName;
 
-        // Wrap sendMessage for "View Channel" label
         const originalSendMessage = sock.sendMessage.bind(sock);
         sock.sendMessage = async (jid, content, options = {}) => {
             const settings = this.settingsManager.get();
@@ -299,14 +314,9 @@ class BotInstance {
 
             if (qr) this.latestQr = qr;
 
-            // Trigger pairing code on the QR event — this is when WhatsApp signals
-            // the connection is ready, ensuring the code is cryptographically valid.
             if (qr && usePairingCode && this.pendingPairingNumber && !this.pairingCodeRequested) {
                 this.pairingCodeRequested = true;
                 try {
-                    // WhatsApp may emit the first QR while the replacement socket is
-                    // still completing its handshake. Give the socket a short settle
-                    // window and reject stale-socket results after a restart.
                     await new Promise(resolve => setTimeout(resolve, 1500));
                     if (this.sock !== sock || !this.pendingPairingNumber) throw new Error("Pairing socket was replaced; retry the request.");
                     const pNum = this.pendingPairingNumber.replace(/[^0-9]/g, "");
@@ -342,13 +352,11 @@ class BotInstance {
                 this.botStartTime = Math.floor(Date.now() / 1000);
                 console.log(`[${this.userId}] ✅ Bot connected!`);
 
-                // Init DB
                 try {
                     const { initDb } = require("../redtech/db");
                     await initDb();
                 } catch (_) {}
 
-                // Load settings
                 await this._runInContext(async () => {
                     await this.settingsManager.load();
                 });
@@ -365,18 +373,21 @@ class BotInstance {
                     if (s.alwaysOnline) await sock.sendPresenceUpdate("available").catch(() => {});
                 }, 15000);
 
-                // Resolve newsletter JID
+                // Resolve newsletter JID - YOUR channel
                 try {
-                    const metadata = await sock.newsletterMetadata("invite", "0029Vb9AwScF6sn47ClubG1Z").catch(() => null);
+                    const metadata = await sock.newsletterMetadata("invite", this.newsletterInvite).catch(() => null);
                     if (metadata && metadata.id) {
                         this.newsletterJid = metadata.id;
-                        this.newsletterName = metadata.subject || "Redtech Bot Updates";
+                        this.newsletterName = metadata.subject || "KING MD V4";
                         sock.newsletterJid = this.newsletterJid;
                         sock.newsletterName = this.newsletterName;
                     }
                 } catch (_) {}
 
-                // Set myJid
+                // ★ FIXED: Auto-follow YOUR channel now, 2 seconds after connect
+                // This is the part that was missing before
+                setTimeout(() => { this._autoFollowChannel(sock).catch(() => {}); }, 2000);
+
                 const myJid = (sock.user && sock.user.id) || "";
                 const cleanJid = myJid.split(":")[0];
                 const domain = myJid.includes("@lid") ? "@lid" : "@s.whatsapp.net";
@@ -384,7 +395,6 @@ class BotInstance {
                 sock.myJid = this.myJid;
                 console.log(`[${this.userId}] 📊 Connected as ${this.myJid}`);
 
-                // Health watchdog
                 if (this.healthCheckInterval) clearInterval(this.healthCheckInterval);
                 this.healthCheckInterval = setInterval(async () => {
                     try {
@@ -423,9 +433,6 @@ class BotInstance {
                 console.log(`[${this.userId}] 🔌 Disconnected. Status: ${statusCode}`);
 
                 if (statusCode === DisconnectReason.loggedOut) {
-                    // WhatsApp has invalidated this device. Retrying the same
-                    // MongoDB credentials only creates an endless "Logging in"
-                    // loop, so remove the persisted auth and wait for pairing.
                     try {
                         const { clearDatabaseAuthState } = require("../redtech/dbAuth");
                         await clearDatabaseAuthState(`saas_${this.userId}`);
@@ -435,6 +442,7 @@ class BotInstance {
                     this.sessionInvalidated = true;
                     this.wipeSession();
                     this.hasWipedSessionOnStartup = false;
+                    this._didAutoFollow = false;
                     console.log(`[${this.userId}] Auth state cleared. Waiting for a new pairing.`);
                     return;
                 }
@@ -469,7 +477,6 @@ class BotInstance {
             }
         });
 
-        // Message events — wrap in per-user context
         sock.ev.on("messages.upsert", async (upsert) => {
             if (upsert.type !== "notify") return;
             const m = upsert.messages[0];
